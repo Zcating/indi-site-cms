@@ -1,0 +1,20 @@
+{
+  "name": "indi-site-cms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "db:generate": "pnpm --filter server run db:generate",
+    "db:push": "pnpm --filter server run db:push",
+    "db:studio": "pnpm --filter server run db:studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}
