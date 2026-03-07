@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY package.json pnpm-lock.yaml ./
+COPY apps/server/package.json apps/server/package-lock.json ./apps/server/
+COPY apps/server/prisma ./apps/server/prisma/
+
+RUN pnpm install --frozen-lockfile --filter=server
+
+COPY apps/server ./apps/server
+
+WORKDIR /app/apps/server
+
+RUN pnpm prisma generate
+
+EXPOSE 3001
+
+CMD ["pnpm", "dev"]

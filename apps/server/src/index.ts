@@ -6,14 +6,19 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
 import { customerRoutes } from './routes/customers.js';
 import { imageRoutes } from './routes/images.js';
 import { pageRoutes } from './routes/pages.js';
-import { PrismaClient } from '@prisma/client';
 
-export const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/indi_site_cms?schema=public'
+});
+
+export const prisma = new PrismaClient({ adapter });
 
 const fastify = Fastify({
   logger: true
