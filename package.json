@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --parallel -r run dev",
+    "dev:web": "pnpm --filter web run dev",
+    "dev:server": "pnpm --filter server run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "db:generate": "pnpm --filter server run db:generate",
