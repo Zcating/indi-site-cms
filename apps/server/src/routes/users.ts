@@ -71,6 +71,11 @@ export async function userRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post<{ Body: CreateUserBody }>('/', async (request: FastifyRequest<{ Body: CreateUserBody }>, reply: FastifyReply) => {
+    const currentUser = request.user as { id: string; role: 'ADMIN' | 'USER' };
+    if (currentUser.role !== 'ADMIN') {
+      return reply.status(403).send({ error: 'Forbidden' });
+    }
+
     const { email, password, name, role } = request.body;
 
     if (!email || !password) {
