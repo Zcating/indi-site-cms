@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { api, Customer } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export async function loader({ request }: { request: Request }) {
   const data = await api.customers.list({ page: 1, limit: 10 }, request);
@@ -38,24 +38,6 @@ export async function loader({ request }: { request: Request }) {
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
   const intent = formData.get("intent");
-
-  if (intent === "create") {
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const company = formData.get("company") as string;
-    const address = formData.get("address") as string;
-    const notes = formData.get("notes") as string;
-    const status = formData.get("status") as string;
-
-    try {
-      await api.customers.create({ name, email, phone, company, address, notes, status }, request);
-      toast.success("客户创建成功");
-      return { success: true };
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : "操作失败" };
-    }
-  }
 
   if (intent === "update") {
     const id = formData.get("id") as string;
@@ -107,12 +89,6 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
 
   const fetcher = useFetcher();
 
-  function openCreateDialog() {
-    setEditingCustomer(null);
-    setFormData({ name: "", email: "", phone: "", company: "", address: "", notes: "", status: "ACTIVE" });
-    setDialogOpen(true);
-  }
-
   function openEditDialog(customer: Customer) {
     setEditingCustomer(customer);
     setFormData({
@@ -129,13 +105,10 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!editingCustomer) return;
     const form = new FormData();
-    if (editingCustomer) {
-      form.append("intent", "update");
-      form.append("id", editingCustomer.id);
-    } else {
-      form.append("intent", "create");
-    }
+    form.append("intent", "update");
+    form.append("id", editingCustomer.id);
     form.append("name", formData.name);
     form.append("email", formData.email);
     form.append("phone", formData.phone);
@@ -164,9 +137,11 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">客户管理</h1>
-        <Button onClick={openCreateDialog}>
-          <Plus className="w-4 h-4 mr-2" />
-          添加客户
+        <Button asChild>
+          <Link to="/admin/customers/new">
+            <Plus className="w-4 h-4 mr-2" />
+            添加客户
+          </Link>
         </Button>
       </div>
 
@@ -226,7 +201,7 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingCustomer ? "编辑客户" : "创建客户"}</DialogTitle>
+            <DialogTitle>编辑客户</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4 py-4">
@@ -301,7 +276,7 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 取消
               </Button>
-              <Button type="submit">{editingCustomer ? "更新" : "创建"}</Button>
+              <Button type="submit">更新</Button>
             </DialogFooter>
           </form>
         </DialogContent>

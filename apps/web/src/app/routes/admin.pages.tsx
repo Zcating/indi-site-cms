@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useFetcher } from "react-router";
+import { useFetcher } from "react-router";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +93,6 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
   const [pages] = useState(initialPages);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<any>(null);
-  const [previewPage, setPreviewPage] = useState<any>(null);
   const [formData, setFormData] = useState({
     slug: "",
     title: "",
@@ -180,8 +179,10 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(page)}><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setPreviewPage(page)} title="预览页面">
-                        <Eye className="w-4 h-4 text-blue-500" />
+                      <Button asChild variant="ghost" size="icon">
+                        <a href={`/${page.slug}`} target="_blank" rel="noreferrer" title="跳转官网">
+                          <Eye className="w-4 h-4 text-blue-500" />
+                        </a>
                       </Button>
                       <Button asChild variant="ghost" size="icon">
                         <a href={`/api/pages/${page.id}/export-html`} title="导出 HTML">
@@ -223,31 +224,6 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!previewPage} onOpenChange={(open) => !open && setPreviewPage(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>官网预览：{previewPage?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-              预览地址：/{previewPage?.slug || ""}
-            </div>
-            <div className="max-h-[60vh] overflow-auto rounded-md border bg-white p-6">
-              <article className="prose max-w-none">
-                <h1>{previewPage?.title}</h1>
-                {previewPage?.content ? (
-                  <div dangerouslySetInnerHTML={{ __html: previewPage.content }} />
-                ) : (
-                  <p className="text-muted-foreground">暂无页面内容</p>
-                )}
-              </article>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setPreviewPage(null)}>关闭</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

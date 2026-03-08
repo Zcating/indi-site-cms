@@ -1,9 +1,20 @@
 import { Link, Outlet, useLocation, redirect } from "react-router";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Image as ImageIcon, FileText, LogOut, Menu } from "lucide-react";
-import { useState } from "react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { LayoutDashboard, Users, Image as ImageIcon, FileText, LogOut, ChevronRight } from "lucide-react";
 
 const navigation = [
   { name: "仪表盘", href: "/admin", icon: LayoutDashboard },
@@ -12,6 +23,11 @@ const navigation = [
   { name: "图片管理", href: "/admin/images", icon: ImageIcon },
   { name: "官网管理", href: "/admin/pages", icon: FileText },
 ];
+
+const breadcrumbPathLabels: Record<string, string> = {
+  "/admin/customers/new": "新建客户",
+  "/admin/images/upload": "上传图片",
+};
 
 export async function loader({ request }: { request: Request }) {
   try {
@@ -34,80 +50,90 @@ export async function action({ request }: { request: Request }) {
 export default function AdminLayout({ loaderData }: { loaderData: { user: { name?: string; email: string; role: string } } }) {
   const { user } = loaderData;
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const breadcrumbs = pathSegments
+    .map((_, index) => `/${pathSegments.slice(0, index + 1).join("/")}`)
+    .filter((path) => path.startsWith("/admin"))
+    .map((path) => {
+      const matchedNavigation = navigation.find((item) => item.href === path);
+      return {
+        href: path,
+        name: matchedNavigation?.name || breadcrumbPathLabels[path] || decodeURIComponent(path.split("/").pop() || ""),
+      };
+    });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div
-        className="fixed inset-0 z-40 lg:hidden"
-        style={{ display: sidebarOpen ? "block" : "none" }}
-      >
-        <div
-          className="fixed inset-0 bg-gray-600/75"
-          onClick={() => setSidebarOpen(false)}
-        />
-      </div>
-
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-1 min-h-0 bg-white border-r">
-          <div className="flex flex-col flex-1 pt-5 pb-4 overflow-y-auto">
-            <div className="px-6 mb-6">
-              <h1 className="text-xl font-bold text-gray-900">INDI CMS</h1>
-            </div>
-            <nav className="flex-1 px-3 space-y-1">
-              {navigation.map((item) => {
-                const isActive =
-                  location.pathname === item.href ||
-                  (item.href !== "/admin" && location.pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      "flex items-center px-3 py-2 text-sm font-medium rounded-md group",
-                      isActive
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    )}
-                  >
-                    <item.icon className="flex-shrink-0 w-5 h-5 mr-3" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <div className="p-4 border-t">
+    <SidebarProvider>
+      <Sidebar className="bg-white border-r">
+        <div className="flex flex-1 min-h-0 flex-col">
+          <SidebarHeader className="mb-2">
+            <h1 className="text-xl font-bold text-gray-900">INDI CMS</h1>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarMenu>
+                {navigation.map((item) => {
+                  const isActive =
+                    location.pathname === item.href ||
+                    (item.href !== "/admin" && location.pathname.startsWith(item.href));
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <Link to={item.href}>
+                          <item.icon className="mr-3 h-5 w-5 shrink-0" />
+                          {item.name}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
             <div className="flex items-center">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-gray-900">
                   {user?.name || user?.email}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+                <p className="truncate text-xs text-gray-500">{user?.role}</p>
               </div>
               <form method="post" action="/admin">
                 <Button variant="ghost" size="icon" type="submit" aria-label="退出登录" data-testid="logout-button">
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="h-4 w-4" />
                 </Button>
               </form>
             </div>
-          </div>
+          </SidebarFooter>
         </div>
-      </div>
+      </Sidebar>
 
-      <div className="lg:pl-64">
+      <SidebarInset>
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <span className="sr-only">Open sidebar</span>
-            <Menu className="w-6 h-6" />
-          </button>
+          <SidebarTrigger className="-m-2.5 p-2.5 text-gray-700" />
           <div className="h-6 w-px bg-gray-200 lg:hidden" />
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex flex-1" />
+            <div className="flex flex-1 items-center">
+              <nav aria-label="面包屑">
+                <ol className="flex items-center text-sm text-gray-500">
+                  {breadcrumbs.map((item, index) => {
+                    const isLast = index === breadcrumbs.length - 1;
+                    return (
+                      <li key={item.href} className="flex items-center">
+                        {index > 0 && <ChevronRight className="mx-2 h-4 w-4 text-gray-400" />}
+                        {isLast ? (
+                          <span className="font-medium text-gray-900">{item.name}</span>
+                        ) : (
+                          <Link to={item.href} className="hover:text-gray-700">
+                            {item.name}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </nav>
+            </div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <span className="hidden text-sm font-medium text-gray-900 lg:block">
                 {user?.name || user?.email}
@@ -121,7 +147,7 @@ export default function AdminLayout({ loaderData }: { loaderData: { user: { name
             <Outlet />
           </div>
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
