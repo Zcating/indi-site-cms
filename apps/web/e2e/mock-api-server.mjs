@@ -65,7 +65,7 @@ const server = createServer(async (req, res) => {
       email: body.email,
       password: body.password,
       name: body.name || body.email.split("@")[0],
-      role: "ADMIN",
+      role: body.role === "USER" ? "USER" : "ADMIN",
     };
     users.set(user.email, user);
     activeUserEmail = user.email;
@@ -113,6 +113,28 @@ const server = createServer(async (req, res) => {
         role: currentUser.role,
       },
     ]);
+  }
+
+  if (path === "/api/users" && req.method === "POST") {
+    if (currentUser.role !== "ADMIN") {
+      return json(res, 403, { error: "Forbidden" });
+    }
+    const body = await readBody(req);
+    if (!body.email || !body.password) {
+      return json(res, 400, { error: "Email and password are required" });
+    }
+    if (users.has(body.email)) {
+      return json(res, 400, { error: "Email already exists" });
+    }
+    const user = {
+      id: randomUUID(),
+      email: body.email,
+      password: body.password,
+      name: body.name || body.email.split("@")[0],
+      role: body.role === "ADMIN" ? "ADMIN" : "USER",
+    };
+    users.set(user.email, user);
+    return json(res, 200, { id: user.id, email: user.email, name: user.name, role: user.role });
   }
 
   if (path === "/api/customers" && req.method === "GET") {

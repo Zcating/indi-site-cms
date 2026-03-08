@@ -52,7 +52,7 @@ export default function AdminLayout({ loaderData }: { loaderData: { user: { name
         <div className="flex flex-col flex-1 min-h-0 bg-white border-r">
           <div className="flex flex-col flex-1 pt-5 pb-4 overflow-y-auto">
             <div className="px-6 mb-6">
-              <h1 className="text-xl font-bold text-gray-900">INDIA CMS</h1>
+              <h1 className="text-xl font-bold text-gray-900">INDI CMS</h1>
             </div>
             <nav className="flex-1 px-3 space-y-1">
               {navigation.map((item) => {

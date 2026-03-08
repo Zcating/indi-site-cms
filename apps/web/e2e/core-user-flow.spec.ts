@@ -18,6 +18,18 @@ async function register(page: Page, user: { name: string; email: string; passwor
   await expect(page).toHaveURL(/\/admin$/);
 }
 
+async function registerAsUserRole(page: Page, user: { name: string; email: string; password: string }) {
+  const response = await page.request.post("/api/auth/register", {
+    data: {
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      role: "USER",
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+}
+
 test.describe("核心用户流程", () => {
   test("未登录访问后台会被重定向到登录页", async ({ page }) => {
     await page.goto("/admin");
@@ -59,5 +71,14 @@ test.describe("核心用户流程", () => {
     await page.getByRole("button", { name: "登录" }).click();
     await expect(page.getByText("Invalid credentials")).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("普通用户不能拥有添加功能", async ({ page }, testInfo) => {
+    const user = buildUser(testInfo.workerIndex);
+    await registerAsUserRole(page, user);
+
+    await page.goto("/admin/users");
+    await expect(page).toHaveURL(/\/admin\/users$/);
+    await expect(page.getByRole("button", { name: "添加用户" })).toHaveCount(0);
   });
 });

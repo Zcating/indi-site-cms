@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useFetcher } from "react-router";
+import { useFetcher } from "react-router";
 import { api, User } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,8 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export async function loader({ request }: { request: Request }) {
   const users = await api.users.list(request);
-  return { users };
+  const currentUser = await api.auth.me(request);
+  return { users, currentUser };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -40,6 +41,11 @@ export async function action({ request }: { request: Request }) {
   const intent = formData.get("intent");
 
   if (intent === "create") {
+    const currentUser = await api.auth.me(request);
+    if (currentUser.role !== "ADMIN") {
+      return { error: "无权限添加用户" };
+    }
+
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
@@ -92,8 +98,8 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function UsersPage({ loaderData }: { loaderData: { users: User[] } }) {
-  const { users: initialUsers } = loaderData;
+export default function UsersPage({ loaderData }: { loaderData: { users: User[]; currentUser: User } }) {
+  const { users: initialUsers, currentUser } = loaderData;
   const [users] = useState(initialUsers);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -143,10 +149,12 @@ export default function UsersPage({ loaderData }: { loaderData: { users: User[] 
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
-        <Button onClick={openCreateDialog}>
-          <Plus className="w-4 h-4 mr-2" />
-          添加用户
-        </Button>
+        {currentUser.role === "ADMIN" && (
+          <Button onClick={openCreateDialog}>
+            <Plus className="w-4 h-4 mr-2" />
+            添加用户
+          </Button>
+        )}
       </div>
 
       <Card>
