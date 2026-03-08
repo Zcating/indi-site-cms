@@ -3,13 +3,13 @@ import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Image as ImageIcon, FileText, UserCog } from "lucide-react";
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
   try {
     const [users, customers, images, pages] = await Promise.all([
-      api.users.list(),
-      api.customers.list({ limit: 1 }),
-      api.images.list({ limit: 1 }),
-      api.pages.list({ limit: 1 }),
+      api.users.list(request),
+      api.customers.list({ limit: 1 }, request),
+      api.images.list({ limit: 1 }, request),
+      api.pages.list({ limit: 1 }, request),
     ]);
     return {
       stats: {
@@ -31,9 +31,13 @@ export async function loader() {
   }
 }
 
-export async function action() {
-  await api.auth.logout();
-  throw redirect("/login");
+export async function action({ request }: { request: Request }) {
+  const result = await api.auth.logout(request);
+  const headers = new Headers();
+  if (result.setCookie) {
+    headers.append("Set-Cookie", result.setCookie);
+  }
+  throw redirect("/login", { headers });
 }
 
 export default function DashboardPage({ loaderData }: { loaderData: { stats: { users: number; customers: number; images: number; pages: number } } }) {

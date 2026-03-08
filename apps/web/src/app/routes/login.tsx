@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
   try {
-    const user = await api.auth.me();
+    const user = await api.auth.me(request);
     if (user) {
       throw redirect("/admin");
     }
@@ -29,9 +29,13 @@ export async function action({ request }: { request: Request }) {
   }
 
   try {
-    await api.auth.login(email, password);
+    const result = await api.auth.login(email, password, request);
     toast.success("登录成功");
-    throw redirect("/admin");
+    const headers = new Headers();
+    if (result.setCookie) {
+      headers.append("Set-Cookie", result.setCookie);
+    }
+    throw redirect("/admin", { headers });
   } catch (error) {
     if (error instanceof Response) throw error;
     return { error: error instanceof Error ? error.message : "登录失败" };

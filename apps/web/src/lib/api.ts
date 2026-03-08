@@ -7,17 +7,30 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
   headers?: Record<string, string>;
+  serverRequest?: Request;
 }
 
-async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, headers = {} } = options;
+async function requestInternal<T>(endpoint: string, options: RequestOptions = {}): Promise<{ data: T; response: Response }> {
+  const { method = 'GET', body, headers = {}, serverRequest } = options;
+
+  const mergedHeaders: Record<string, string> = {
+    ...headers,
+  };
+
+  if (typeof window === 'undefined') {
+    const cookie = serverRequest?.headers.get('cookie');
+    if (cookie) {
+      mergedHeaders.Cookie = cookie;
+    }
+  }
+
+  if (body !== undefined && !(body instanceof FormData)) {
+    mergedHeaders['Content-Type'] = mergedHeaders['Content-Type'] || 'application/json';
+  }
 
   const config: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: mergedHeaders,
     credentials: 'include',
   };
 
@@ -26,61 +39,85 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, config);
-  const data = await response.json();
+  const rawBody = await response.text();
+  const data = rawBody ? JSON.parse(rawBody) : {};
 
   if (!response.ok) {
     throw new Error(data.error || 'Request failed');
   }
 
+  return { data: data as T, response };
+}
+
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const { data } = await requestInternal<T>(endpoint, options);
   return data;
 }
 
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
-      request<{ user: User }>('/auth/login', { method: 'POST', body: { email, password } }),
-    register: (email: string, password: string, name?: string) =>
-      request<{ user: User }>('/auth/register', { method: 'POST', body: { email, password, name } }),
-    logout: () => request('/auth/logout', { method: 'POST' }),
-    me: () => request<User>('/auth/me'),
+    login: async (email: string, password: string, serverRequest?: Request) => {
+      const { data, response } = await requestInternal<{ user: User }>('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+        serverRequest,
+      });
+      return { ...data, setCookie: response.headers.get('set-cookie') || undefined };
+    },
+    register: async (email: string, password: string, name?: string, serverRequest?: Request) => {
+      const { data, response } = await requestInternal<{ user: User }>('/auth/register', {
+        method: 'POST',
+        body: { email, password, name },
+        serverRequest,
+      });
+      return { ...data, setCookie: response.headers.get('set-cookie') || undefined };
+    },
+    logout: async (serverRequest?: Request) => {
+      const { data, response } = await requestInternal<{ success: boolean }>('/auth/logout', {
+        method: 'POST',
+        serverRequest,
+      });
+      return { ...data, setCookie: response.headers.get('set-cookie') || undefined };
+    },
+    me: (serverRequest?: Request) => request<User>('/auth/me', { serverRequest }),
   },
   users: {
-    list: () => request<User[]>('/users'),
-    get: (id: string) => request<User>(`/users/${id}`),
-    create: (data: { email: string; password: string; name?: string; role?: string }) =>
-      request<User>('/users', { method: 'POST', body: data }),
-    update: (id: string, data: { email?: string; name?: string; role?: string; password?: string }) =>
-      request<User>(`/users/${id}`, { method: 'PUT', body: data }),
-    delete: (id: string) => request<{ success: boolean }>(`/users/${id}`, { method: 'DELETE' }),
+    list: (serverRequest?: Request) => request<User[]>('/users', { serverRequest }),
+    get: (id: string, serverRequest?: Request) => request<User>(`/users/${id}`, { serverRequest }),
+    create: (data: { email: string; password: string; name?: string; role?: string }, serverRequest?: Request) =>
+      request<User>('/users', { method: 'POST', body: data, serverRequest }),
+    update: (id: string, data: { email?: string; name?: string; role?: string; password?: string }, serverRequest?: Request) =>
+      request<User>(`/users/${id}`, { method: 'PUT', body: data, serverRequest }),
+    delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/users/${id}`, { method: 'DELETE', serverRequest }),
   },
   customers: {
-    list: (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+    list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.set('page', String(params.page));
       if (params?.limit) searchParams.set('limit', String(params.limit));
       if (params?.status) searchParams.set('status', params.status);
       if (params?.search) searchParams.set('search', params.search);
       const query = searchParams.toString();
-      return request<{ data: Customer[]; pagination: Pagination }>(`/customers${query ? `?${query}` : ''}`);
+      return request<{ data: Customer[]; pagination: Pagination }>(`/customers${query ? `?${query}` : ''}`, { serverRequest });
     },
-    get: (id: string) => request<Customer>(`/customers/${id}`),
-    create: (data: { name: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }) =>
-      request<Customer>('/customers', { method: 'POST', body: data }),
-    update: (id: string, data: { name?: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }) =>
-      request<Customer>(`/customers/${id}`, { method: 'PUT', body: data }),
-    delete: (id: string) => request<{ success: boolean }>(`/customers/${id}`, { method: 'DELETE' }),
+    get: (id: string, serverRequest?: Request) => request<Customer>(`/customers/${id}`, { serverRequest }),
+    create: (data: { name: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }, serverRequest?: Request) =>
+      request<Customer>('/customers', { method: 'POST', body: data, serverRequest }),
+    update: (id: string, data: { name?: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }, serverRequest?: Request) =>
+      request<Customer>(`/customers/${id}`, { method: 'PUT', body: data, serverRequest }),
+    delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/customers/${id}`, { method: 'DELETE', serverRequest }),
   },
   images: {
-    list: (params?: { page?: number; limit?: number; category?: string; search?: string }) => {
+    list: (params?: { page?: number; limit?: number; category?: string; search?: string }, serverRequest?: Request) => {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.set('page', String(params.page));
       if (params?.limit) searchParams.set('limit', String(params.limit));
       if (params?.category) searchParams.set('category', params.category);
       if (params?.search) searchParams.set('search', params.search);
       const query = searchParams.toString();
-      return request<{ data: Image[]; pagination: Pagination }>(`/images${query ? `?${query}` : ''}`);
+      return request<{ data: Image[]; pagination: Pagination }>(`/images${query ? `?${query}` : ''}`, { serverRequest });
     },
-    upload: async (file: File, metadata: { title?: string; alt?: string; category?: string; tags?: string[] }) => {
+    upload: async (file: File, metadata: { title?: string; alt?: string; category?: string; tags?: string[] }, serverRequest?: Request) => {
       const formData = new FormData();
       formData.append('file', file);
       if (metadata.title) formData.append('title', metadata.title);
@@ -91,6 +128,10 @@ export const api = {
       const response = await fetch(`${API_BASE}/images`, {
         method: 'POST',
         body: formData,
+        headers:
+          typeof window === 'undefined' && serverRequest?.headers.get('cookie')
+            ? { Cookie: serverRequest.headers.get('cookie')! }
+            : undefined,
         credentials: 'include',
       });
       const data = await response.json();
@@ -99,25 +140,25 @@ export const api = {
       }
       return data as Image;
     },
-    delete: (id: string) => request<{ success: boolean }>(`/images/${id}`, { method: 'DELETE' }),
+    delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/images/${id}`, { method: 'DELETE', serverRequest }),
   },
   pages: {
-    list: (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
+    list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => {
       const searchParams = new URLSearchParams();
       if (params?.page) searchParams.set('page', String(params.page));
       if (params?.limit) searchParams.set('limit', String(params.limit));
       if (params?.status) searchParams.set('status', params.status);
       if (params?.search) searchParams.set('search', params.search);
       const query = searchParams.toString();
-      return request<{ data: Page[]; pagination: Pagination }>(`/pages${query ? `?${query}` : ''}`);
+      return request<{ data: Page[]; pagination: Pagination }>(`/pages${query ? `?${query}` : ''}`, { serverRequest });
     },
-    get: (id: string) => request<Page>(`/pages/${id}`),
-    getBySlug: (slug: string) => request<Page>(`/pages/slug/${slug}`),
-    create: (data: { slug: string; title: string; content?: string; metaTitle?: string; metaDescription?: string; status?: string }) =>
-      request<Page>('/pages', { method: 'POST', body: data }),
-    update: (id: string, data: { slug?: string; title?: string; content?: string; metaTitle?: string; metaDescription?: string; status?: string }) =>
-      request<Page>(`/pages/${id}`, { method: 'PUT', body: data }),
-    delete: (id: string) => request<{ success: boolean }>(`/pages/${id}`, { method: 'DELETE' }),
+    get: (id: string, serverRequest?: Request) => request<Page>(`/pages/${id}`, { serverRequest }),
+    getBySlug: (slug: string, serverRequest?: Request) => request<Page>(`/pages/slug/${slug}`, { serverRequest }),
+    create: (data: { slug: string; title: string; content?: string; metaTitle?: string; metaDescription?: string; status?: string }, serverRequest?: Request) =>
+      request<Page>('/pages', { method: 'POST', body: data, serverRequest }),
+    update: (id: string, data: { slug?: string; title?: string; content?: string; metaTitle?: string; metaDescription?: string; status?: string }, serverRequest?: Request) =>
+      request<Page>(`/pages/${id}`, { method: 'PUT', body: data, serverRequest }),
+    delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/pages/${id}`, { method: 'DELETE', serverRequest }),
   },
 };
 

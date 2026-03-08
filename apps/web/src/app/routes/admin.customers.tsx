@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
-export async function loader() {
-  const data = await api.customers.list({ page: 1, limit: 10 });
+export async function loader({ request }: { request: Request }) {
+  const data = await api.customers.list({ page: 1, limit: 10 }, request);
   return { customers: data.data, pagination: data.pagination };
 }
 
@@ -49,7 +49,7 @@ export async function action({ request }: { request: Request }) {
     const status = formData.get("status") as string;
 
     try {
-      await api.customers.create({ name, email, phone, company, address, notes, status });
+      await api.customers.create({ name, email, phone, company, address, notes, status }, request);
       toast.success("客户创建成功");
       return { success: true };
     } catch (error) {
@@ -68,7 +68,7 @@ export async function action({ request }: { request: Request }) {
     const status = formData.get("status") as string;
 
     try {
-      await api.customers.update(id, { name, email, phone, company, address, notes, status });
+      await api.customers.update(id, { name, email, phone, company, address, notes, status }, request);
       toast.success("客户更新成功");
       return { success: true };
     } catch (error) {
@@ -79,7 +79,7 @@ export async function action({ request }: { request: Request }) {
   if (intent === "delete") {
     const id = formData.get("id") as string;
     try {
-      await api.customers.delete(id);
+      await api.customers.delete(id, request);
       toast.success("客户删除成功");
       return { success: true };
     } catch (error) {

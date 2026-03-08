@@ -13,18 +13,22 @@ const navigation = [
   { name: "官网管理", href: "/admin/pages", icon: FileText },
 ];
 
-export async function loader() {
+export async function loader({ request }: { request: Request }) {
   try {
-    const user = await api.auth.me();
+    const user = await api.auth.me(request);
     return { user };
   } catch {
     throw redirect("/login");
   }
 }
 
-export async function action() {
-  await api.auth.logout();
-  throw redirect("/login");
+export async function action({ request }: { request: Request }) {
+  const result = await api.auth.logout(request);
+  const headers = new Headers();
+  if (result.setCookie) {
+    headers.append("Set-Cookie", result.setCookie);
+  }
+  throw redirect("/login", { headers });
 }
 
 export default function AdminLayout({ loaderData }: { loaderData: { user: { name?: string; email: string; role: string } } }) {

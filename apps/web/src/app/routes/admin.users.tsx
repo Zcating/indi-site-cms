@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
-export async function loader() {
-  const users = await api.users.list();
+export async function loader({ request }: { request: Request }) {
+  const users = await api.users.list(request);
   return { users };
 }
 
@@ -46,7 +46,7 @@ export async function action({ request }: { request: Request }) {
     const role = formData.get("role") as string;
 
     try {
-      await api.users.create({ email, password, name, role });
+      await api.users.create({ email, password, name, role }, request);
       toast.success("用户创建成功");
       return { success: true };
     } catch (error) {
@@ -70,7 +70,7 @@ export async function action({ request }: { request: Request }) {
       if (password) {
         updateData.password = password;
       }
-      await api.users.update(id, updateData);
+      await api.users.update(id, updateData, request);
       toast.success("用户更新成功");
       return { success: true };
     } catch (error) {
@@ -81,7 +81,7 @@ export async function action({ request }: { request: Request }) {
   if (intent === "delete") {
     const id = formData.get("id") as string;
     try {
-      await api.users.delete(id);
+      await api.users.delete(id, request);
       toast.success("用户删除成功");
       return { success: true };
     } catch (error) {
