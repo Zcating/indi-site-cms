@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Image as ImageIcon, FileText, UserCog } from "lucide-react";
@@ -29,6 +29,11 @@ export async function loader() {
       },
     };
   }
+}
+
+export async function action() {
+  await api.auth.logout();
+  throw redirect("/login");
 }
 
 export default function DashboardPage({ loaderData }: { loaderData: { stats: { users: number; customers: number; images: number; pages: number } } }) {

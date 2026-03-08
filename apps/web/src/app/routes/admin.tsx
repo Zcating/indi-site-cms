@@ -81,8 +81,8 @@ export default function AdminLayout({ loaderData }: { loaderData: { user: { name
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user?.role}</p>
               </div>
-              <form method="post">
-                <Button variant="ghost" size="icon" type="submit">
+              <form method="post" action="/admin">
+                <Button variant="ghost" size="icon" type="submit" aria-label="退出登录" data-testid="logout-button">
                   <LogOut className="w-4 h-4" />
                 </Button>
               </form>
