@@ -1,5 +1,5 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
-import "../index.css";
+import "./index.css";
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
