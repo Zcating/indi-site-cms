@@ -22,8 +22,8 @@ import {
 import { toast } from "sonner";
 import { Trash2, Upload, Search, Image as ImageIcon } from "lucide-react";
 
-export async function loader() {
-  const data = await api.images.list({ page: 1, limit: 20 });
+export async function loader({ request }: { request: Request }) {
+  const data = await api.images.list({ page: 1, limit: 20 }, request);
   return { images: data.data, pagination: data.pagination };
 }
 
@@ -42,7 +42,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     try {
-      await api.images.upload(file, { title, alt, category: category || undefined });
+      await api.images.upload(file, { title, alt, category: category || undefined }, request);
       toast.success("图片上传成功");
       return { success: true };
     } catch (error) {
@@ -53,7 +53,7 @@ export async function action({ request }: { request: Request }) {
   if (intent === "delete") {
     const id = formData.get("id") as string;
     try {
-      await api.images.delete(id);
+      await api.images.delete(id, request);
       toast.success("图片删除成功");
       return { success: true };
     } catch (error) {

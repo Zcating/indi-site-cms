@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
-export async function loader() {
-  const data = await api.pages.list({ page: 1, limit: 10 });
+export async function loader({ request }: { request: Request }) {
+  const data = await api.pages.list({ page: 1, limit: 10 }, request);
   return { pages: data.data, pagination: data.pagination };
 }
 
@@ -48,7 +48,7 @@ export async function action({ request }: { request: Request }) {
     const status = formData.get("status") as string;
 
     try {
-      await api.pages.create({ slug, title, content, metaTitle, metaDescription, status });
+      await api.pages.create({ slug, title, content, metaTitle, metaDescription, status }, request);
       toast.success("页面创建成功");
       return { success: true };
     } catch (error) {
@@ -66,7 +66,7 @@ export async function action({ request }: { request: Request }) {
     const status = formData.get("status") as string;
 
     try {
-      await api.pages.update(id, { slug, title, content, metaTitle, metaDescription, status });
+      await api.pages.update(id, { slug, title, content, metaTitle, metaDescription, status }, request);
       toast.success("页面更新成功");
       return { success: true };
     } catch (error) {
@@ -77,7 +77,7 @@ export async function action({ request }: { request: Request }) {
   if (intent === "delete") {
     const id = formData.get("id") as string;
     try {
-      await api.pages.delete(id);
+      await api.pages.delete(id, request);
       toast.success("页面删除成功");
       return { success: true };
     } catch (error) {
