@@ -10,12 +10,12 @@
 
 ## 项目结构
 
-```
+``` text
 indi-site-cms/
 ├── apps/
-│   └── web/          # 前端应用
-├── packages/
-│   └── server/       # 后端服务
+│   ├── web/          # 前端应用
+│   ├── server/       # 后端服务
+│   └── main-site/       # 官网前端应用
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -29,6 +29,13 @@ pnpm install
 ```
 
 ### 2. 配置数据库
+
+安装 docker 并启动 postgresql 容器
+
+```bash
+docker compose -f 'docker-compose.yml' up -d --build 'postgres'
+cp packages/server/.env.example packages/server/.env
+```
 
 复制环境变量文件：
 

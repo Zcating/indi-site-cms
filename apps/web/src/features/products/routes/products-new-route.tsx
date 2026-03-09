@@ -6,6 +6,7 @@ import { z } from "zod";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -140,10 +141,10 @@ export default function NewProductPage({ actionData }: Route.ComponentProps) {
 
             <div className="space-y-2">
               <Label htmlFor="description">描述</Label>
-              <textarea
+              <Textarea
                 id="description"
                 {...form.register("description")}
-                className="flex min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="min-h-[140px]"
                 placeholder="请输入产品描述"
               />
             </div>

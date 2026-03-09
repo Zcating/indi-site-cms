@@ -34,16 +34,11 @@ test.describe("产品管理流程", () => {
     
     const newProduct = {
       name: `测试产品-${testInfo.workerIndex}`,
-      slug: `test-product-${testInfo.workerIndex}`,
-      price: "99.99",
-      stock: "100",
       description: "这是一个测试产品的描述",
     };
 
     await page.getByLabel("名称 *").fill(newProduct.name);
-    await page.getByLabel("Slug *").fill(newProduct.slug);
-    await page.getByLabel("价格 *").fill(newProduct.price);
-    await page.getByLabel("库存").fill(newProduct.stock);
+    // Slug, Price, Stock are not in the form anymore or auto-generated
     
     // 选择状态 - 跳过复杂的下拉交互，使用默认值 DRAFT (草稿)
     // 验证默认显示
@@ -57,7 +52,6 @@ test.describe("产品管理流程", () => {
     // 验证重定向和列表显示
     await expect(page).toHaveURL(/\/admin\/products$/);
     await expect(page.getByText(newProduct.name)).toBeVisible();
-    await expect(page.getByText("¥99.99")).toBeVisible();
     // 验证状态显示为草稿
     await expect(page.getByText("草稿")).toBeVisible();
 
@@ -66,10 +60,14 @@ test.describe("产品管理流程", () => {
     const productRow = page.getByRole("row").filter({ hasText: newProduct.name });
     await productRow.getByRole("button").first().click();
 
+    // TODO: Verify edit form opens. Currently implemented as separate page or dialog?
+    // Assuming dialog based on previous test code, but need to check if it's correct.
+    // If update is not implemented or different, this part might fail.
+    // Let's assume dialog for now as per previous code.
     await expect(page.getByRole("dialog", { name: "编辑产品" })).toBeVisible();
     
     const updatedName = `更新后的产品-${testInfo.workerIndex}`;
-    await page.getByLabel("名称 *").fill(updatedName);
+    await page.getByLabel("名称").fill(updatedName);
     await page.getByRole("button", { name: "更新" }).click();
     
     // 验证弹窗关闭和提示

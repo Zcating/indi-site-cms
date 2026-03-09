@@ -59,7 +59,7 @@ try {
 
   const testRunner = start(
     pnpmBin,
-    ["exec", "playwright", "test", "--reporter=list"],
+    ["exec", "playwright", "test", "--reporter=list", ...process.argv.slice(2)],
     {
       env: {
         ...process.env,
