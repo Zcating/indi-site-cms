@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, type Column } from "@/components/internal/data-table";
 import {
   Dialog,
   DialogContent,
@@ -216,6 +209,62 @@ export default function PagesPage({
 
   const statusMap: Record<string, string> = { DRAFT: "草稿", PUBLISHED: "已发布", ARCHIVED: "已归档" };
 
+  const columns: Column<Page>[] = [
+    {
+      label: "标题",
+      value: "title",
+      className: "font-medium",
+    },
+    {
+      label: "Slug",
+      render: (page) => (
+        <code className="rounded bg-gray-100 px-2 py-1 text-sm">/{page.slug}</code>
+      ),
+    },
+    {
+      label: "SEO 标题",
+      render: (page) => page.metaTitle || "-",
+    },
+    {
+      label: "状态",
+      render: (page) => (
+        <span
+          className={`rounded px-2 py-1 text-xs ${page.status === "PUBLISHED"
+            ? "bg-green-100 text-green-800"
+            : page.status === "DRAFT"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-gray-100 text-gray-800"
+            }`}
+        >
+          {statusMap[page.status]}
+        </span>
+      ),
+    },
+    {
+      label: "操作",
+      render: (page) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => openEditDialog(page)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button asChild variant="ghost" size="icon">
+            <a href={`/${page.slug}`} target="_blank" rel="noreferrer" title="跳转官网">
+              <Eye className="h-4 w-4 text-blue-500" />
+            </a>
+          </Button>
+          <Button asChild variant="ghost" size="icon">
+            <a href={`/api/pages/${page.id}/export-html`} title="导出 HTML">
+              <Download className="h-4 w-4 text-emerald-600" />
+            </a>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(page.id)}>
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -231,61 +280,7 @@ export default function PagesPage({
           <CardTitle>页面列表</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>标题</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>SEO 标题</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pages.map((page) => (
-                <TableRow key={page.id}>
-                  <TableCell className="font-medium">{page.title}</TableCell>
-                  <TableCell>
-                    <code className="rounded bg-gray-100 px-2 py-1 text-sm">/{page.slug}</code>
-                  </TableCell>
-                  <TableCell>{page.metaTitle || "-"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`rounded px-2 py-1 text-xs ${
-                        page.status === "PUBLISHED"
-                          ? "bg-green-100 text-green-800"
-                          : page.status === "DRAFT"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {statusMap[page.status]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(page)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button asChild variant="ghost" size="icon">
-                        <a href={`/${page.slug}`} target="_blank" rel="noreferrer" title="跳转官网">
-                          <Eye className="h-4 w-4 text-blue-500" />
-                        </a>
-                      </Button>
-                      <Button asChild variant="ghost" size="icon">
-                        <a href={`/api/pages/${page.id}/export-html`} title="导出 HTML">
-                          <Download className="h-4 w-4 text-emerald-600" />
-                        </a>
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(page.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} data={pages} rowKey={(page) => page.id} />
         </CardContent>
       </Card>
 

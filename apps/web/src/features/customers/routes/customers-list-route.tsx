@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable, type Column } from "@/components/internal/data-table";
 import {
   Dialog,
   DialogContent,
@@ -180,6 +173,54 @@ export default function CustomersPage({
     ARCHIVED: "已归档",
   };
 
+  const columns: Column<Customer>[] = [
+    {
+      label: "名称",
+      value: "name",
+      className: "font-medium",
+    },
+    {
+      label: "邮箱",
+      render: (customer) => customer.email || "-",
+    },
+    {
+      label: "电话",
+      render: (customer) => customer.phone || "-",
+    },
+    {
+      label: "公司",
+      render: (customer) => customer.company || "-",
+    },
+    {
+      label: "状态",
+      render: (customer) => (
+        <span
+          className={`rounded px-2 py-1 text-xs ${customer.status === "ACTIVE"
+              ? "bg-green-100 text-green-800"
+              : customer.status === "INACTIVE"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+        >
+          {statusMap[customer.status]}
+        </span>
+      ),
+    },
+    {
+      label: "操作",
+      render: (customer) => (
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => openEditDialog(customer)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(customer.id)}>
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -197,51 +238,7 @@ export default function CustomersPage({
           <CardTitle>客户列表</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>名称</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>电话</TableHead>
-                <TableHead>公司</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.email || "-"}</TableCell>
-                  <TableCell>{customer.phone || "-"}</TableCell>
-                  <TableCell>{customer.company || "-"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`rounded px-2 py-1 text-xs ${
-                        customer.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800"
-                          : customer.status === "INACTIVE"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {statusMap[customer.status]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(customer)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(customer.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} data={customers} rowKey={(customer) => customer.id} />
         </CardContent>
       </Card>
 
