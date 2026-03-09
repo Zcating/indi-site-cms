@@ -10,6 +10,7 @@ export default [
   index("routes/_index.tsx"),
   route(authRoutes.login.path, authRoutes.login.module),
   route(authRoutes.register.path, authRoutes.register.module),
+  route(pagesRoutes.mimooHome.path, pagesRoutes.mimooHome.module),
   route(":slug", "routes/site.slug.tsx"),
   layout("routes/admin.tsx", [
     route(dashboardRoutes.adminHome.path, dashboardRoutes.adminHome.module),
