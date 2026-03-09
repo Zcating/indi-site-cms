@@ -1,12 +1,22 @@
 {
   "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
+    ],
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -27,8 +37,8 @@
     }
   },
   "include": [
-    "src",
-    "src/+types"
+    "**/*",
+    ".react-router/types/**/*"
   ],
   "references": [
     {

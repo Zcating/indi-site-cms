@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
+import type { Route } from './+types/admin-users';
+
 const userFormSchema = z.object({
   email: z.string().email("请输入有效邮箱"),
   name: z.string().trim(),
@@ -141,7 +143,7 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function UsersPage({ loaderData }: { loaderData: { users: User[]; currentUser: User } }) {
+export default function UsersPage({ loaderData }: Route) {
   const { users: initialUsers, currentUser } = loaderData;
   const [users] = useState(initialUsers);
   const [dialogOpen, setDialogOpen] = useState(false);

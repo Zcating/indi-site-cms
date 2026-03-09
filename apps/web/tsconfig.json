@@ -7,6 +7,10 @@
       "DOM",
       "DOM.Iterable"
     ],
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -28,7 +32,7 @@
   },
   "include": [
     "src",
-    "src/+types"
+    ".react-router/types/**/*"
   ],
   "references": [
     {

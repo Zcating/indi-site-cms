@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { useLoaderData } from "react-router";
+import type { Route } from "./+types/home";
+
+
 
 type MediaType = "video" | "image";
 
@@ -43,14 +45,6 @@ interface HomeConfig {
   };
 }
 
-export async function loader() {
-  const fs = await import("node:fs/promises");
-  const path = await import("node:path");
-  const filePath = path.resolve("public/site.json");
-  const content = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(content) as HomeConfig;
-}
-
 export async function clientLoader() {
   const res = await fetch("/site.json");
   if (!res.ok) {
@@ -59,13 +53,12 @@ export async function clientLoader() {
   return res.json() as Promise<HomeConfig>;
 }
 
-clientLoader.hydrate = true;
+// clientLoader.hydrate = true;
 
-export default function IndiHomeRoute() {
-  const homeConfig = useLoaderData() as HomeConfig;
+export default function IndiHomeRoute(props: Route.ComponentProps) {
+  const homeConfig = props.loaderData;
   const rootRef = useRef<HTMLDivElement>(null);
   const [consultOpen, setConsultOpen] = useState(false);
-  const [activeChannel, setActiveChannel] = useState<string>(homeConfig?.consult?.channels[0] || "");
 
   useEffect(() => {
     if (!rootRef.current) return;

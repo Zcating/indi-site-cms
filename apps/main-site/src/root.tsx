@@ -54,7 +54,7 @@ export function ErrorBoundary({ error }: { error?: unknown }) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
+  } else if (process.env.NODE_ENV === "development" && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }

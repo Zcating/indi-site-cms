@@ -9,7 +9,7 @@ const apiTarget = process.env.VITE_API_PROXY_TARGET || `http://localhost:${apiPo
 
 
 export default defineConfig({
-  plugins: [tailwindcss(), react(), reactRouter()],
+  plugins: [tailwindcss(), reactRouter()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
