@@ -15,7 +15,8 @@
     "lint": "pnpm -r run lint",
     "db:generate": "pnpm --filter server run db:generate",
     "db:push": "pnpm --filter server run db:push",
-    "db:studio": "pnpm --filter server run db:studio"
+    "db:studio": "pnpm --filter server run db:studio",
+    "db:migrate": "pnpm --filter server run db:migrate"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
