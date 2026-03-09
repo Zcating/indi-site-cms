@@ -251,7 +251,7 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
                 <Label htmlFor="status">状态</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value: string) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => value && setFormData({ ...formData, status: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />

@@ -105,7 +105,7 @@ export default function ImageUploadPage() {
 
             <div className="space-y-2">
               <Label htmlFor="category">分类</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}>
+              <Select value={formData.category} onValueChange={(value) => value && setFormData((prev) => ({ ...prev, category: value }))}>
                 <SelectTrigger id="category">
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>

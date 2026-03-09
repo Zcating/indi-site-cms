@@ -78,11 +78,9 @@ export default function AdminLayout({ loaderData }: { loaderData: { user: { name
                     (item.href !== "/admin" && location.pathname.startsWith(item.href));
                   return (
                     <SidebarMenuItem key={item.name}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link to={item.href}>
-                          <item.icon className="mr-3 h-5 w-5 shrink-0" />
-                          {item.name}
-                        </Link>
+                      <SidebarMenuButton render={<Link to={item.href} />} isActive={isActive}>
+                        <item.icon className="mr-3 h-5 w-5 shrink-0" />
+                        {item.name}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

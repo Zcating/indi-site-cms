@@ -207,7 +207,7 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
               <div className="space-y-2"><Label htmlFor="title">标题 *</Label><Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
               <div className="space-y-2"><Label htmlFor="slug">Slug *</Label><Input id="slug" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="page-slug" required /></div>
               <div className="space-y-2"><Label htmlFor="status">状态</Label>
-                <Select value={formData.status} onValueChange={(value: string) => setFormData({ ...formData, status: value })}>
+                <Select value={formData.status} onValueChange={(value) => value && setFormData({ ...formData, status: value })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="DRAFT">草稿</SelectItem><SelectItem value="PUBLISHED">已发布</SelectItem><SelectItem value="ARCHIVED">已归档</SelectItem></SelectContent>
                 </Select>
