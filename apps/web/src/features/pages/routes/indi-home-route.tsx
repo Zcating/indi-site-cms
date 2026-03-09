@@ -1,6 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
+type MediaType = "video" | "image";
+
+interface MediaItem {
+  type: MediaType;
+  title: string;
+  source: string;
+}
+
+interface HomeConfig {
+  brand: string;
+  tagline: string;
+  hero: {
+    badge: string;
+    title: string;
+    highlight: string;
+    description: string;
+  };
+  products: {
+    name: string;
+    flavor: string;
+    tone: string;
+    emoji: string;
+  }[];
+  oem: {
+    title: string;
+    description: string;
+    features: string[];
+    media: MediaItem[];
+  };
+  about: {
+    title: string;
+    content: string[];
+    stats: { value: string; label: string }[];
+  };
+  consult: {
+    title: string;
+    subtitle: string;
+    channels: readonly string[];
+  };
+}
+
 const homeConfig = {
   brand: "mimoo",
   tagline: "Next Level Kawaii Bakery",
@@ -46,7 +87,7 @@ const homeConfig = {
     subtitle: "有任何问题或合作意向，欢迎随时联系我们",
     channels: ["微信/企微", "电话回呼", "邮箱报价"],
   },
-} as const;
+} satisfies HomeConfig;
 
 export default function IndiHomeRoute() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -83,7 +124,7 @@ export default function IndiHomeRoute() {
             </p>
             <h1 className="hero-title mt-5 text-5xl leading-tight font-black md:text-7xl text-mimoo-chocolate">
               {homeConfig.hero.title}
-              <span className="block bg-gradient-to-r from-mimoo-sakura via-mimoo-yellow to-mimoo-matcha bg-clip-text text-transparent">
+              <span className="block bg-linear-to-r from-mimoo-sakura via-mimoo-yellow to-mimoo-matcha bg-clip-text text-transparent">
                 {homeConfig.hero.highlight}
               </span>
             </h1>
@@ -108,7 +149,7 @@ export default function IndiHomeRoute() {
           </div>
           <div className="flex-1 relative flex justify-center">
             <div className="relative w-72 h-72 md:w-96 md:h-96">
-              <div className="absolute inset-0 bg-gradient-to-br from-mimoo-sakura to-mimoo-rose rounded-full flex items-center justify-center shadow-2xl animate-float">
+              <div className="absolute inset-0 bg-linear-to-br from-mimoo-sakura to-mimoo-rose rounded-full flex items-center justify-center shadow-2xl animate-float">
                 <span className="text-8xl md:text-9xl">🍓</span>
               </div>
               <div className="absolute -top-4 -right-4 bg-white p-4 rounded-2xl shadow-lg animate-wiggle">
@@ -135,7 +176,7 @@ export default function IndiHomeRoute() {
                 key={product.name}
                 className="product-card group rounded-3xl border-2 border-mimoo-sakura/20 bg-white p-6 shadow-lg transition-all hover:-translate-y-2 hover:shadow-xl hover:border-mimoo-sakura cursor-pointer"
               >
-                <div className={`w-full h-48 bg-gradient-to-br ${product.tone} rounded-2xl mb-6 flex items-center justify-center text-7xl group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-full h-48 bg-linear-to-br ${product.tone} rounded-2xl mb-6 flex items-center justify-center text-7xl group-hover:scale-110 transition-transform duration-300`}>
                   {product.emoji}
                 </div>
                 <h3 className="text-xl font-bold text-mimoo-chocolate mb-2 group-hover:text-mimoo-coral transition-colors">{product.name}</h3>
@@ -168,17 +209,63 @@ export default function IndiHomeRoute() {
                 咨询代加工
               </button>
             </div>
-            <div className="flex justify-center relative">
-              <div className="relative">
-                <div className="w-80 h-80 bg-white rounded-3xl shadow-2xl flex items-center justify-center border-4 border-mimoo-milk">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">🏭</div>
-                    <p className="text-mimoo-chocolate font-bold text-xl">日式标准化工厂</p>
+            <div className="flex flex-col gap-4 relative p-4">
+              {homeConfig.oem.media[0] && (
+                <div className="relative w-full aspect-video bg-mimoo-milk rounded-3xl overflow-hidden shadow-xl border-4 border-mimoo-cream transform -rotate-1 hover:rotate-0 transition-transform duration-500">
+                  {homeConfig.oem.media[0].type === "video" ? (
+                    <video
+                      src={homeConfig.oem.media[0].source}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <img
+                      src={homeConfig.oem.media[0].source}
+                      alt={homeConfig.oem.media[0].title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-bold text-mimoo-chocolate shadow-sm">
+                    {homeConfig.oem.media[0].title}
                   </div>
                 </div>
-                <div className="absolute -bottom-6 -right-6 bg-mimoo-sakura p-4 rounded-2xl shadow-lg animate-wiggle">
-                  <span className="text-4xl">✅</span>
-                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 px-2">
+                {homeConfig.oem.media.slice(1).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative aspect-square bg-mimoo-milk rounded-2xl overflow-hidden shadow-lg border-2 border-mimoo-cream hover:scale-105 transition-transform duration-300 ${idx % 2 === 0 ? "rotate-1" : "-rotate-1"
+                      }`}
+                  >
+                    {item.type === "video" ? (
+                      <video
+                        src={item.source}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={item.source}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-[10px] font-bold text-mimoo-chocolate shadow-sm">
+                      {item.title}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="absolute -bottom-2 -right-2 bg-mimoo-sakura p-4 rounded-2xl shadow-lg animate-wiggle z-10">
+                <span className="text-4xl">✅</span>
               </div>
             </div>
           </div>

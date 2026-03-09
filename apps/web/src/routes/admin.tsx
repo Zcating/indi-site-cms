@@ -17,18 +17,20 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Image as ImageIcon, FileText, LogOut, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Image as ImageIcon, FileText, LogOut, ChevronRight, Package } from "lucide-react";
 
 const navigation = [
   { name: "仪表盘", href: "/admin", icon: LayoutDashboard },
   { name: "用户管理", href: "/admin/users", icon: Users },
   { name: "客户管理", href: "/admin/customers", icon: Users },
+  { name: "产品管理", href: "/admin/products", icon: Package },
   { name: "图片管理", href: "/admin/images", icon: ImageIcon },
   { name: "官网管理", href: "/admin/pages", icon: FileText },
 ];
 
 const breadcrumbPathLabels: Record<string, string> = {
   "/admin/customers/new": "新建客户",
+  "/admin/products/new": "新建产品",
   "/admin/images/upload": "上传图片",
 };
 

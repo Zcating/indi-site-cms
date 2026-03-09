@@ -34,7 +34,7 @@ test.describe("核心用户流程", () => {
   test("未登录访问后台会被重定向到登录页", async ({ page }) => {
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { name: "登录" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "登录" })).toBeVisible();
   });
 
   test("新用户注册后可访问后台并完成导航与退出登录", async ({ page }, testInfo) => {

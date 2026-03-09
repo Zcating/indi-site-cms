@@ -107,6 +107,23 @@ export const api = {
       request<Customer>(`/customers/${id}`, { method: 'PUT', body: data, serverRequest }),
     delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/customers/${id}`, { method: 'DELETE', serverRequest }),
   },
+  products: {
+    list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => {
+      const searchParams = new URLSearchParams();
+      if (params?.page) searchParams.set('page', String(params.page));
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.search) searchParams.set('search', params.search);
+      const query = searchParams.toString();
+      return request<{ data: Product[]; pagination: Pagination }>(`/products${query ? `?${query}` : ''}`, { serverRequest });
+    },
+    get: (id: string, serverRequest?: Request) => request<Product>(`/products/${id}`, { serverRequest }),
+    create: (data: { name: string; slug: string; description?: string; price: number; stock?: number; status?: string }, serverRequest?: Request) =>
+      request<Product>('/products', { method: 'POST', body: data, serverRequest }),
+    update: (id: string, data: { name?: string; slug?: string; description?: string; price?: number; stock?: number; status?: string }, serverRequest?: Request) =>
+      request<Product>(`/products/${id}`, { method: 'PUT', body: data, serverRequest }),
+    delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/products/${id}`, { method: 'DELETE', serverRequest }),
+  },
   images: {
     list: (params?: { page?: number; limit?: number; category?: string; search?: string }, serverRequest?: Request) => {
       const searchParams = new URLSearchParams();
@@ -196,6 +213,18 @@ export interface Image {
   alt?: string;
   category?: string;
   tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number | string;
+  stock: number;
+  status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt: string;
 }

@@ -5,6 +5,7 @@ import { pagesRoutes } from "./features/pages/routes";
 import { imagesRoutes } from "./features/images/routes";
 import { usersRoutes } from "./features/users/routes";
 import { authRoutes } from "./features/auth/routes";
+import { productsRoutes } from "./features/products/routes";
 
 export default [
   index("routes/_index.tsx"),
@@ -17,6 +18,8 @@ export default [
     route(usersRoutes.usersList.path, usersRoutes.usersList.module),
     route(customersRoutes.customersNew.path, customersRoutes.customersNew.module),
     route(customersRoutes.customersList.path, customersRoutes.customersList.module),
+    route(productsRoutes.productsNew.path, productsRoutes.productsNew.module),
+    route(productsRoutes.productsList.path, productsRoutes.productsList.module),
     route(imagesRoutes.imagesList.path, imagesRoutes.imagesList.module),
     route(imagesRoutes.imagesUpload.path, imagesRoutes.imagesUpload.module),
     route(pagesRoutes.pagesList.path, pagesRoutes.pagesList.module),

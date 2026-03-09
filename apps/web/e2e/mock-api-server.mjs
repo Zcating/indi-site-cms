@@ -5,6 +5,7 @@ const PORT = Number(process.env.MOCK_API_PORT || 3001);
 const ALLOWED_ORIGIN = process.env.MOCK_WEB_ORIGIN || "http://localhost:4173";
 
 const users = new Map();
+const products = new Map();
 let activeUserEmail = null;
 
 function json(res, status, data, extraHeaders = {}) {
@@ -139,6 +140,59 @@ const server = createServer(async (req, res) => {
 
   if (path === "/api/customers" && req.method === "GET") {
     return json(res, 200, { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+  }
+
+  // Products API
+  if (path === "/api/products" && req.method === "GET") {
+    const allProducts = Array.from(products.values());
+    return json(res, 200, {
+      data: allProducts,
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: allProducts.length,
+        totalPages: Math.ceil(allProducts.length / 10),
+      },
+    });
+  }
+
+  if (path === "/api/products" && req.method === "POST") {
+    const body = await readBody(req);
+    const product = {
+      id: randomUUID(),
+      ...body,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    products.set(product.id, product);
+    return json(res, 201, product);
+  }
+
+  // Match /api/products/:id
+  const productMatch = path.match(/^\/api\/products\/([\w-]+)$/);
+  if (productMatch) {
+    const productId = productMatch[1];
+
+    if (req.method === "GET") {
+      const product = products.get(productId);
+      if (!product) return json(res, 404, { error: "Product not found" });
+      return json(res, 200, product);
+    }
+
+    if (req.method === "PUT") {
+      const body = await readBody(req);
+      const existing = products.get(productId);
+      if (!existing) return json(res, 404, { error: "Product not found" });
+      const updated = { ...existing, ...body, updatedAt: new Date().toISOString() };
+      products.set(productId, updated);
+      return json(res, 200, updated);
+    }
+
+    if (req.method === "DELETE") {
+      if (!products.has(productId)) return json(res, 404, { error: "Product not found" });
+      products.delete(productId);
+      return json(res, 200, { success: true });
+    }
   }
 
   if (path === "/api/images" && req.method === "GET") {
