@@ -58,7 +58,7 @@ export async function loader({ request }: { request: Request }) {
   return { users, currentUser };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -143,7 +143,7 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function UsersPage({ loaderData }: Route) {
+export default function UsersPage({ loaderData }: Route.ComponentProps) {
   const { users: initialUsers, currentUser } = loaderData;
   const [users] = useState(initialUsers);
   const [dialogOpen, setDialogOpen] = useState(false);

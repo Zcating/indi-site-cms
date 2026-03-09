@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import type { Route } from "./+types/register-route";
 
 const registerFormSchema = z.object({
   name: z.string().optional(),
@@ -17,7 +18,7 @@ const registerFormSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   try {
     const user = await api.auth.me(request);
     if (user) {
@@ -29,7 +30,7 @@ export async function loader({ request }: { request: Request }) {
   return { user: null };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const parsed = registerFormSchema.safeParse({
     name: formData.get("name"),
@@ -56,7 +57,7 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function RegisterPage({ actionData }: { actionData?: { error?: string } }) {
+export default function RegisterPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submit = useSubmit();
   const isLoading = navigation.state === "submitting";

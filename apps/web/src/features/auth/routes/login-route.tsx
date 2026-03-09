@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import type { Route } from "./+types/login-route";
 
 const loginFormSchema = z.object({
   email: z.string().email("请输入有效邮箱"),
@@ -16,7 +17,7 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   try {
     const user = await api.auth.me(request);
     if (user) {
@@ -28,7 +29,7 @@ export async function loader({ request }: { request: Request }) {
   return { user: null };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const parsed = loginFormSchema.safeParse({
     email: formData.get("email"),
@@ -54,7 +55,7 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function LoginPage({ actionData }: { actionData?: { error?: string } }) {
+export default function LoginPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submit = useSubmit();
   const isLoading = navigation.state === "submitting";

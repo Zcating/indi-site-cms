@@ -2,8 +2,9 @@ import { redirect } from "react-router";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Image as ImageIcon, FileText, UserCog } from "lucide-react";
+import type { Route } from "./+types/admin-dashboard";
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   try {
     const [users, customers, images, pages] = await Promise.all([
       api.users.list(request),
@@ -31,7 +32,7 @@ export async function loader({ request }: { request: Request }) {
   }
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const result = await api.auth.logout(request);
   const headers = new Headers();
   if (result.setCookie) {
@@ -40,7 +41,7 @@ export async function action({ request }: { request: Request }) {
   throw redirect("/login", { headers });
 }
 
-export default function DashboardPage({ loaderData }: { loaderData: { stats: { users: number; customers: number; images: number; pages: number } } }) {
+export default function DashboardPage({ loaderData }: Route.ComponentProps) {
   const { stats } = loaderData;
 
   const statCards = [

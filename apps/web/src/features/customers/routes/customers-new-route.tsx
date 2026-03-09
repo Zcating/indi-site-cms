@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Route } from "./+types/customers-new-route";
 
 const customerCreateSchema = z.object({
   name: z.string().trim().min(1, "请输入客户名称"),
@@ -27,7 +28,7 @@ const customerCreateSchema = z.object({
 
 type CustomerCreateValues = z.infer<typeof customerCreateSchema>;
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const parsed = customerCreateSchema.safeParse({
     name: formData.get("name"),
@@ -47,8 +48,7 @@ export async function action({ request }: { request: Request }) {
   return redirect("/admin/customers");
 }
 
-export default function NewCustomerPage() {
-  const actionData = useActionData<{ error?: string }>();
+export default function NewCustomerPage({ actionData }: Route.ComponentProps) {
   const submit = useSubmit();
   const form = useForm<CustomerCreateValues>({
     resolver: zodResolver(customerCreateSchema),

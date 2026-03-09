@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import type { Route } from "./+types/customers-list-route";
 
 const customerEditSchema = z.object({
   name: z.string().trim().min(1, "请输入客户名称"),
@@ -48,12 +49,12 @@ const customerDeleteActionSchema = z.object({
 
 type CustomerEditValues = z.infer<typeof customerEditSchema>;
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   const data = await api.customers.list({ page: 1, limit: 10 }, request);
   return { customers: data.data, pagination: data.pagination };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -108,12 +109,7 @@ export async function action({ request }: { request: Request }) {
 
 export default function CustomersPage({
   loaderData,
-}: {
-  loaderData: {
-    customers: Customer[];
-    pagination: { page: number; limit: number; total: number; totalPages: number };
-  };
-}) {
+}: Route.ComponentProps) {
   const { customers: initialCustomers } = loaderData;
   const [customers] = useState(initialCustomers);
   const [dialogOpen, setDialogOpen] = useState(false);

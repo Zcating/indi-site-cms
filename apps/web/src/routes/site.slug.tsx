@@ -1,7 +1,8 @@
 import { Link, useRouteError, isRouteErrorResponse } from "react-router";
 import { api } from "@/lib/api";
+import type { Route } from "./+types/site.slug";
 
-export async function loader({ params, request }: { params: { slug?: string }; request: Request }) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const slug = params.slug;
   if (!slug) {
     throw new Response("页面不存在", { status: 404 });
@@ -21,7 +22,7 @@ export async function loader({ params, request }: { params: { slug?: string }; r
   }
 }
 
-export default function SitePage({ loaderData }: { loaderData: { page: { title: string; content?: string } } }) {
+export default function SitePage({ loaderData }: Route.ComponentProps) {
   const { page } = loaderData;
 
   return (

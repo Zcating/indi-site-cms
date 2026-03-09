@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Eye, Download } from "lucide-react";
+import type { Route } from "./+types/pages-list-route";
 
 const pageFormSchema = z.object({
   slug: z.string().trim().min(1, "请输入 Slug"),
@@ -51,12 +52,12 @@ const pageDeleteSchema = z.object({
 
 type PageFormValues = z.infer<typeof pageFormSchema>;
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   const data = await api.pages.list({ page: 1, limit: 10 }, request);
   return { pages: data.data, pagination: data.pagination };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -135,12 +136,7 @@ export async function action({ request }: { request: Request }) {
 
 export default function PagesPage({
   loaderData,
-}: {
-  loaderData: {
-    pages: Page[];
-    pagination: { page: number; limit: number; total: number; totalPages: number };
-  };
-}) {
+}: Route.ComponentProps) {
   const { pages: initialPages } = loaderData;
   const [pages] = useState(initialPages);
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Upload } from "lucide-react";
+import type { Route } from "./+types/images-upload-route";
 
 const imageUploadSchema = z.object({
   title: z.string().trim(),
@@ -28,7 +29,7 @@ const imageUploadSchema = z.object({
 
 type ImageUploadValues = z.infer<typeof imageUploadSchema>;
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const parsed = imageUploadSchema.safeParse({
     title: formData.get("title"),
@@ -50,8 +51,7 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function ImageUploadPage() {
-  const actionData = useActionData<{ error?: string }>();
+export default function ImageUploadPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const submit = useSubmit();
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUploader } from "@/components/internal/image-uploader";
 import { toast } from "sonner";
+import type { Route } from "./+types/products-new-route";
 
 const productCreateSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
@@ -28,7 +29,7 @@ const productCreateSchema = z.object({
 
 type ProductCreateValues = z.infer<typeof productCreateSchema>;
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const imageIds = formData.getAll("imageIds") as string[];
 
@@ -47,8 +48,7 @@ export async function action({ request }: { request: Request }) {
   return redirect("/admin/products");
 }
 
-export default function NewProductPage() {
-  const actionData = useActionData<{ error?: string }>();
+export default function NewProductPage({ actionData }: Route.ComponentProps) {
   const submit = useSubmit();
 
   const form = useForm<ProductCreateValues>({

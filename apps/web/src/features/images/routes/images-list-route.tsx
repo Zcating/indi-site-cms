@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import type { Route } from "./+types/images-list-route";
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   const data = await api.images.list({ page: 1, limit: 20 }, request);
   return { images: data.data, pagination: data.pagination };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -29,7 +30,7 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function ImagesPage({ loaderData }: { loaderData: { images: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } } }) {
+export default function ImagesPage({ loaderData }: Route.ComponentProps) {
   const { images: initialImages } = loaderData;
   const [images] = useState(initialImages);
   const fetcher = useFetcher();

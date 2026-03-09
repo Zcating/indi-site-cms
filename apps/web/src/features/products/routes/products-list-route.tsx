@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { ImageUploader } from "@/components/internal/image-uploader";
+import type { Route } from "./+types/products-list-route";
 
 const productEditSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
@@ -49,12 +50,12 @@ const productDeleteActionSchema = z.object({
 
 type ProductEditValues = z.infer<typeof productEditSchema>;
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   const data = await api.products.list({ page: 1, limit: 10 }, request);
   return { products: data.data, pagination: data.pagination };
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -107,12 +108,7 @@ export async function action({ request }: { request: Request }) {
 
 export default function ProductsPage({
   loaderData,
-}: {
-  loaderData: {
-    products: Product[];
-    pagination: { page: number; limit: number; total: number; totalPages: number };
-  };
-}) {
+}: Route.ComponentProps) {
   const { products: initialProducts } = loaderData;
   const [products] = useState(initialProducts);
   const [dialogOpen, setDialogOpen] = useState(false);

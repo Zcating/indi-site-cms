@@ -18,6 +18,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, Image as ImageIcon, FileText, LogOut, ChevronRight, Package } from "lucide-react";
+import type { Route } from "./+types/admin";
 
 const navigation = [
   { name: "仪表盘", href: "/admin", icon: LayoutDashboard },
@@ -38,7 +39,7 @@ const adminActionSchema = z.object({
   intent: z.literal("logout"),
 });
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request }: Route.LoaderArgs) {
   try {
     const user = await api.auth.me(request);
     return { user };
@@ -47,7 +48,7 @@ export async function loader({ request }: { request: Request }) {
   }
 }
 
-export async function action({ request }: { request: Request }) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const parsed = adminActionSchema.safeParse({
     intent: formData.get("intent"),
@@ -65,7 +66,7 @@ export async function action({ request }: { request: Request }) {
   throw redirect("/login", { headers });
 }
 
-export default function AdminLayout({ loaderData }: { loaderData: { user: { name?: string; email: string; role: string } } }) {
+export default function AdminLayout({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
   const logoutForm = useForm<z.infer<typeof adminActionSchema>>({
     resolver: zodResolver(adminActionSchema),
