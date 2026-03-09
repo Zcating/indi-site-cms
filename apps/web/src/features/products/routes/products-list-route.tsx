@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { ImageUploader } from "@/components/internal/image-uploader";
 import type { Route } from "./+types/products-list-route";
+import { Image } from "@/components/internal/image";
 
 const productEditSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
@@ -56,19 +57,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const intent = formData.get("intent");
+  const data = await request.json();
+  const intent = data.intent;
 
   if (intent === "update") {
-    const parsed = productUpdateActionSchema.safeParse({
-      intent: formData.get("intent"),
-      id: formData.get("id"),
-      name: formData.get("name"),
-      slug: formData.get("slug"),
-      description: formData.get("description"),
-      status: formData.get("status"),
-      imageIds: formData.getAll("imageIds"),
-    });
+    const parsed = productUpdateActionSchema.safeParse(data);
 
     if (!parsed.success) {
       return { error: parsed.error.issues[0]?.message || "表单校验失败" };
@@ -86,8 +79,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === "delete") {
     const parsed = productDeleteActionSchema.safeParse({
-      intent: formData.get("intent"),
-      id: formData.get("id"),
+      intent: data.intent,
+      id: data.id,
     });
 
     if (!parsed.success) {
@@ -132,26 +125,14 @@ export default function ProductsPage({
       slug: product.slug,
       description: product.description || "",
       status: product.status,
-      imageUrl: product.images?.[0]?.url || "",
+      imageUrl: product.imageUrl || "",
     });
     setDialogOpen(true);
   }
 
   async function handleSubmit(values: ProductEditValues) {
     if (!editingProduct) return;
-    const formData = new FormData();
-    formData.append("intent", "update");
-    formData.append("id", editingProduct.id);
-    formData.append("name", values.name);
-    // 只有当 slug 有值时才提交，否则让后端自动处理
-    if (values.slug) {
-        formData.append("slug", values.slug);
-    }
-    if (values.description) formData.append("description", values.description);
-    formData.append("status", values.status);
-
     const imageUrl = values.imageUrl;
-
     // 如果有新选择的文件，先上传
     if (imageUrl && imageUrl.startsWith('blob:')) {
       try {
@@ -159,22 +140,16 @@ export default function ProductsPage({
         const blob = await response.blob();
         const file = new File([blob], "image.png", { type: blob.type });
         const image = await api.images.upload(file, { title: values.name });
-        formData.append("imageIds", image.id);
+        values.imageUrl = image.absoluteUrl || image.url;
         toast.success("图片上传成功");
       } catch (error) {
         toast.error("图片上传失败");
         console.error(error);
         return;
       }
-    } else if (imageUrl) {
-      // 如果是原有图片，查找对应的 ID
-      const existingImage = editingProduct.images?.find(img => img.url === imageUrl);
-      if (existingImage) {
-        formData.append("imageIds", existingImage.id);
-      }
     }
 
-    fetcher.submit(formData, { method: "post" });
+    fetcher.submit(values, { method: "post" });
     setDialogOpen(false);
   }
 
@@ -203,19 +178,10 @@ export default function ProductsPage({
       label: "图片",
       render: (product) => (
         <div className="flex -space-x-2 overflow-hidden">
-          {product.images?.slice(0, 3).map((img) => (
-            <img
-              key={img.id}
-              src={img.url}
-              alt={product.name}
-              className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-            />
-          ))}
-          {product.images && product.images.length > 3 && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-2 ring-white text-xs text-gray-500">
-              +{product.images.length - 3}
-            </div>
-          )}
+          <Image
+            src={product.imageUrl || ""}
+            alt={product.name}
+          />
         </div>
       ),
     },

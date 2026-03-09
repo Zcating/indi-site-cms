@@ -88,10 +88,8 @@ export async function imageRoutes(fastify: FastifyInstance) {
 
     const filename = `${randomUUID()}${path.extname(data.filename)}`;
     const filepath = path.join(UPLOAD_DIR, filename);
-    
-    await fs.writeFile(filepath, await data.toBuffer());
-
     const buffer = await data.toBuffer();
+    await fs.writeFile(filepath, buffer);
     const metadata = await getImageMetadata(buffer);
 
     const { title, alt, category, tags } = request.body as any;
@@ -111,7 +109,13 @@ export async function imageRoutes(fastify: FastifyInstance) {
       }
     });
 
-    return image;
+    const host = request.headers.host;
+    const absoluteUrl = host ? `${request.protocol}://${host}${image.url}` : image.url;
+
+    return {
+      ...image,
+      absoluteUrl,
+    };
   });
 
   fastify.delete<{ Params: ImageParams }>('/:id', async (request: FastifyRequest<{ Params: ImageParams }>, reply: FastifyReply) => {

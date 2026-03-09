@@ -207,6 +207,7 @@ export interface Image {
   title: string;
   filename: string;
   url: string;
+  absoluteUrl?: string;
   mimeType: string;
   size: number;
   width?: number;
@@ -223,7 +224,7 @@ export interface Product {
   name: string;
   slug: string;
   description?: string;
-  images?: Image[];
+  imageUrl?: string;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt: string;
