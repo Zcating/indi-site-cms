@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Form, Link, redirect, useActionData, useSubmit } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+function generateSlug(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "") // 移除非字母数字字符
+    .replace(/\s+/g, "-") // 空格转连字符
+    .replace(/-+/g, "-"); // 移除重复连字符
+}
 
 const productCreateSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
@@ -59,6 +69,14 @@ export default function NewProductPage() {
       status: "DRAFT",
     },
   });
+
+  // 监听名称变化自动生成 Slug
+  const name = form.watch("name");
+  useEffect(() => {
+    if (name && !form.getValues("slug")) {
+      form.setValue("slug", generateSlug(name));
+    }
+  }, [name, form]);
 
   function onSubmit(values: ProductCreateValues) {
     submit(values, { method: "post" });

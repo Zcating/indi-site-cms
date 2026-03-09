@@ -55,6 +55,8 @@ model Image {
   tags      String[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?
 }
 
 model Page {
@@ -80,7 +82,7 @@ model Product {
   name        String
   slug        String        @unique
   description String?
-  price       Decimal       @db.Decimal(10, 2)
+  images      Image[]
   stock       Int           @default(0)
   status      ProductStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
