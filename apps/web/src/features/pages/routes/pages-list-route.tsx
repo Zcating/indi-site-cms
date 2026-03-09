@@ -297,7 +297,10 @@ export default function PagesPage({
 
             <TabsContent value="products">
               <Card>
-                <CardHeader><CardTitle>产品列表</CardTitle><CardDescription>展示主打产品信息</CardDescription></CardHeader>
+                <CardHeader>
+                  <CardTitle>产品列表</CardTitle>
+                  <CardDescription>展示主打产品信息</CardDescription>
+                </CardHeader>
                 <CardContent>
                   <ProductsArray availableProducts={availableProducts} />
                 </CardContent>

@@ -14,8 +14,7 @@ export const productSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
   flavor: z.string(),
-  tone: z.string(),
-  emoji: z.string(),
+  image: z.string().optional(),
 });
 
 export const oemMediaSchema = z.object({

@@ -8,12 +8,12 @@ export const defaultSiteJson = {
     description: "来自日本的手作温度，每一口都是心动的味道。严格选用优质原料，传统工艺与现代技术结合。"
   },
   products: [
-    { name: "草莓大福", flavor: "软糯Q弹的和果子", tone: "from-pink-300 to-rose-300", emoji: "🍡" },
-    { name: "奶油面包", flavor: "绵密奶香入口即化", tone: "from-amber-200 to-yellow-300", emoji: "🍞" },
-    { name: "抹茶红豆", flavor: "宇治抹茶配甜蜜红豆", tone: "from-green-200 to-emerald-200", emoji: "🍰" },
-    { name: "樱花麻薯", flavor: "春日限定的浪漫", tone: "from-pink-200 to-rose-200", emoji: "🌸" },
-    { name: "黄油曲奇", flavor: "酥脆香浓的经典", tone: "from-amber-100 to-orange-100", emoji: "🍪" },
-    { name: "卡斯特拉", flavor: "日式柔软的云朵蛋糕", tone: "from-yellow-100 to-amber-100", emoji: "🧁" }
+    { name: "草莓大福", description: "软糯Q弹的和果子", image: "" },
+    { name: "奶油面包", description: "绵密奶香入口即化", image: "" },
+    { name: "抹茶红豆", description: "宇治抹茶配甜蜜红豆", image: "" },
+    { name: "樱花麻薯", description: "春日限定的浪漫", image: "" },
+    { name: "黄油曲奇", description: "酥脆香浓的经典", image: "" },
+    { name: "卡斯特拉", description: "日式柔软的云朵蛋糕", image: "" }
   ],
   oem: {
     title: "代加工服务",
