@@ -197,7 +197,7 @@ export default function ProductsPage({
       className: "font-medium",
     },
     {
-      label: "Slug",
+      label: "别名",
       render: (product) => <code className="rounded bg-gray-100 px-2 py-1 text-xs">/{product.slug}</code>,
     },
     {
