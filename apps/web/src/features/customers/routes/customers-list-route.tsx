@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link, useFetcher } from "react-router";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api, Customer } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +33,28 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
+const customerEditSchema = z.object({
+  name: z.string().trim().min(1, "请输入客户名称"),
+  email: z.string().trim().refine((value) => !value || z.string().email().safeParse(value).success, "请输入有效邮箱"),
+  phone: z.string().trim(),
+  company: z.string().trim(),
+  address: z.string().trim(),
+  notes: z.string().trim(),
+  status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]),
+});
+
+const customerUpdateActionSchema = customerEditSchema.extend({
+  intent: z.literal("update"),
+  id: z.string().min(1),
+});
+
+const customerDeleteActionSchema = z.object({
+  intent: z.literal("delete"),
+  id: z.string().min(1),
+});
+
+type CustomerEditValues = z.infer<typeof customerEditSchema>;
+
 export async function loader({ request }: { request: Request }) {
   const data = await api.customers.list({ page: 1, limit: 10 }, request);
   return { customers: data.data, pagination: data.pagination };
@@ -40,17 +65,25 @@ export async function action({ request }: { request: Request }) {
   const intent = formData.get("intent");
 
   if (intent === "update") {
-    const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const company = formData.get("company") as string;
-    const address = formData.get("address") as string;
-    const notes = formData.get("notes") as string;
-    const status = formData.get("status") as string;
+    const parsed = customerUpdateActionSchema.safeParse({
+      intent: formData.get("intent"),
+      id: formData.get("id"),
+      name: formData.get("name"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      company: formData.get("company"),
+      address: formData.get("address"),
+      notes: formData.get("notes"),
+      status: formData.get("status"),
+    });
+
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "表单校验失败" };
+    }
 
     try {
-      await api.customers.update(id, { name, email, phone, company, address, notes, status }, request);
+      const { id, intent: _intent, ...data } = parsed.data;
+      await api.customers.update(id, data, request);
       toast.success("客户更新成功");
       return { success: true };
     } catch (error) {
@@ -59,9 +92,17 @@ export async function action({ request }: { request: Request }) {
   }
 
   if (intent === "delete") {
-    const id = formData.get("id") as string;
+    const parsed = customerDeleteActionSchema.safeParse({
+      intent: formData.get("intent"),
+      id: formData.get("id"),
+    });
+
+    if (!parsed.success) {
+      return { error: "参数错误" };
+    }
+
     try {
-      await api.customers.delete(id, request);
+      await api.customers.delete(parsed.data.id, request);
       toast.success("客户删除成功");
       return { success: true };
     } catch (error) {
@@ -84,21 +125,24 @@ export default function CustomersPage({
   const [customers] = useState(initialCustomers);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    address: "",
-    notes: "",
-    status: "ACTIVE",
-  });
 
   const fetcher = useFetcher();
+  const form = useForm<CustomerEditValues>({
+    resolver: zodResolver(customerEditSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      address: "",
+      notes: "",
+      status: "ACTIVE",
+    },
+  });
 
   function openEditDialog(customer: Customer) {
     setEditingCustomer(customer);
-    setFormData({
+    form.reset({
       name: customer.name,
       email: customer.email || "",
       phone: customer.phone || "",
@@ -110,20 +154,16 @@ export default function CustomersPage({
     setDialogOpen(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit(values: CustomerEditValues) {
     if (!editingCustomer) return;
-    const form = new FormData();
-    form.append("intent", "update");
-    form.append("id", editingCustomer.id);
-    form.append("name", formData.name);
-    form.append("email", formData.email);
-    form.append("phone", formData.phone);
-    form.append("company", formData.company);
-    form.append("address", formData.address);
-    form.append("notes", formData.notes);
-    form.append("status", formData.status);
-    fetcher.submit(form, { method: "post" });
+    fetcher.submit(
+      {
+        intent: "update",
+        id: editingCustomer.id,
+        ...values,
+      },
+      { method: "post" },
+    );
   }
 
   function handleDelete(id: string) {
@@ -210,73 +250,56 @@ export default function CustomersPage({
           <DialogHeader>
             <DialogTitle>编辑客户</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">名称 *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
+                <Input id="name" {...form.register("name")} />
+                {form.formState.errors.name ? (
+                  <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">邮箱</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+                <Input id="email" type="email" {...form.register("email")} />
+                {form.formState.errors.email ? (
+                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">电话</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
+                <Input id="phone" {...form.register("phone")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">公司</Label>
-                <Input
-                  id="company"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                />
+                <Input id="company" {...form.register("company")} />
               </div>
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="address">地址</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
+                <Input id="address" {...form.register("address")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">状态</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => value && setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">活跃</SelectItem>
-                    <SelectItem value="INACTIVE">不活跃</SelectItem>
-                    <SelectItem value="ARCHIVED">已归档</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="status"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">活跃</SelectItem>
+                        <SelectItem value="INACTIVE">不活跃</SelectItem>
+                        <SelectItem value="ARCHIVED">已归档</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">备注</Label>
-                <Input
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
+                <Input id="notes" {...form.register("notes")} />
               </div>
             </div>
             <DialogFooter>

@@ -1,4 +1,7 @@
 import { Link, Outlet, useLocation, redirect } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +32,10 @@ const breadcrumbPathLabels: Record<string, string> = {
   "/admin/images/upload": "上传图片",
 };
 
+const adminActionSchema = z.object({
+  intent: z.literal("logout"),
+});
+
 export async function loader({ request }: { request: Request }) {
   try {
     const user = await api.auth.me(request);
@@ -39,6 +46,15 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const parsed = adminActionSchema.safeParse({
+    intent: formData.get("intent"),
+  });
+
+  if (!parsed.success) {
+    return { error: "未知操作" };
+  }
+
   const result = await api.auth.logout(request);
   const headers = new Headers();
   if (result.setCookie) {
@@ -49,6 +65,12 @@ export async function action({ request }: { request: Request }) {
 
 export default function AdminLayout({ loaderData }: { loaderData: { user: { name?: string; email: string; role: string } } }) {
   const { user } = loaderData;
+  const logoutForm = useForm<z.infer<typeof adminActionSchema>>({
+    resolver: zodResolver(adminActionSchema),
+    defaultValues: {
+      intent: "logout",
+    },
+  });
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);
   const breadcrumbs = pathSegments
@@ -97,6 +119,7 @@ export default function AdminLayout({ loaderData }: { loaderData: { user: { name
                 <p className="truncate text-xs text-gray-500">{user?.role}</p>
               </div>
               <form method="post" action="/admin">
+                <input type="hidden" value="logout" {...logoutForm.register("intent")} />
                 <Button variant="ghost" size="icon" type="submit" aria-label="退出登录" data-testid="logout-button">
                   <LogOut className="h-4 w-4" />
                 </Button>

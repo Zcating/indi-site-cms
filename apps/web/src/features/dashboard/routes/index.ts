@@ -1,6 +1,6 @@
 export const dashboardRoutes = {
   adminHome: {
     path: "admin",
-    module: "routes/admin.dashboard.tsx",
+    module: "features/dashboard/routes/admin-dashboard.tsx",
   },
 } as const;

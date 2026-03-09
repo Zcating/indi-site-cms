@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useFetcher } from "react-router";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api, type Page } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +33,31 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Eye, Download } from "lucide-react";
 
+const pageFormSchema = z.object({
+  slug: z.string().trim().min(1, "请输入 Slug"),
+  title: z.string().trim().min(1, "请输入标题"),
+  content: z.string().trim(),
+  metaTitle: z.string().trim(),
+  metaDescription: z.string().trim(),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+});
+
+const pageCreateSchema = pageFormSchema.extend({
+  intent: z.literal("create"),
+});
+
+const pageUpdateSchema = pageFormSchema.extend({
+  intent: z.literal("update"),
+  id: z.string().min(1),
+});
+
+const pageDeleteSchema = z.object({
+  intent: z.literal("delete"),
+  id: z.string().min(1),
+});
+
+type PageFormValues = z.infer<typeof pageFormSchema>;
+
 export async function loader({ request }: { request: Request }) {
   const data = await api.pages.list({ page: 1, limit: 10 }, request);
   return { pages: data.data, pagination: data.pagination };
@@ -40,15 +68,23 @@ export async function action({ request }: { request: Request }) {
   const intent = formData.get("intent");
 
   if (intent === "create") {
-    const slug = formData.get("slug") as string;
-    const title = formData.get("title") as string;
-    const content = formData.get("content") as string;
-    const metaTitle = formData.get("metaTitle") as string;
-    const metaDescription = formData.get("metaDescription") as string;
-    const status = formData.get("status") as string;
+    const parsed = pageCreateSchema.safeParse({
+      intent: formData.get("intent"),
+      slug: formData.get("slug"),
+      title: formData.get("title"),
+      content: formData.get("content"),
+      metaTitle: formData.get("metaTitle"),
+      metaDescription: formData.get("metaDescription"),
+      status: formData.get("status"),
+    });
+
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "表单校验失败" };
+    }
 
     try {
-      await api.pages.create({ slug, title, content, metaTitle, metaDescription, status }, request);
+      const { intent: _intent, ...data } = parsed.data;
+      await api.pages.create(data, request);
       toast.success("页面创建成功");
       return { success: true };
     } catch (error) {
@@ -57,16 +93,24 @@ export async function action({ request }: { request: Request }) {
   }
 
   if (intent === "update") {
-    const id = formData.get("id") as string;
-    const slug = formData.get("slug") as string;
-    const title = formData.get("title") as string;
-    const content = formData.get("content") as string;
-    const metaTitle = formData.get("metaTitle") as string;
-    const metaDescription = formData.get("metaDescription") as string;
-    const status = formData.get("status") as string;
+    const parsed = pageUpdateSchema.safeParse({
+      intent: formData.get("intent"),
+      id: formData.get("id"),
+      slug: formData.get("slug"),
+      title: formData.get("title"),
+      content: formData.get("content"),
+      metaTitle: formData.get("metaTitle"),
+      metaDescription: formData.get("metaDescription"),
+      status: formData.get("status"),
+    });
+
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message || "表单校验失败" };
+    }
 
     try {
-      await api.pages.update(id, { slug, title, content, metaTitle, metaDescription, status }, request);
+      const { id, intent: _intent, ...data } = parsed.data;
+      await api.pages.update(id, data, request);
       toast.success("页面更新成功");
       return { success: true };
     } catch (error) {
@@ -75,9 +119,17 @@ export async function action({ request }: { request: Request }) {
   }
 
   if (intent === "delete") {
-    const id = formData.get("id") as string;
+    const parsed = pageDeleteSchema.safeParse({
+      intent: formData.get("intent"),
+      id: formData.get("id"),
+    });
+
+    if (!parsed.success) {
+      return { error: "参数错误" };
+    }
+
     try {
-      await api.pages.delete(id, request);
+      await api.pages.delete(parsed.data.id, request);
       toast.success("页面删除成功");
       return { success: true };
     } catch (error) {
@@ -100,26 +152,29 @@ export default function PagesPage({
   const [pages] = useState(initialPages);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
-  const [formData, setFormData] = useState({
-    slug: "",
-    title: "",
-    content: "",
-    metaTitle: "",
-    metaDescription: "",
-    status: "DRAFT",
-  });
 
   const fetcher = useFetcher();
+  const form = useForm<PageFormValues>({
+    resolver: zodResolver(pageFormSchema),
+    defaultValues: {
+      slug: "",
+      title: "",
+      content: "",
+      metaTitle: "",
+      metaDescription: "",
+      status: "DRAFT",
+    },
+  });
 
   function openCreateDialog() {
     setEditingPage(null);
-    setFormData({ slug: "", title: "", content: "", metaTitle: "", metaDescription: "", status: "DRAFT" });
+    form.reset({ slug: "", title: "", content: "", metaTitle: "", metaDescription: "", status: "DRAFT" });
     setDialogOpen(true);
   }
 
   function openEditDialog(page: Page) {
     setEditingPage(page);
-    setFormData({
+    form.reset({
       slug: page.slug,
       title: page.title,
       content: page.content || "",
@@ -130,22 +185,25 @@ export default function PagesPage({
     setDialogOpen(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const form = new FormData();
+  function handleSubmit(values: PageFormValues) {
     if (editingPage) {
-      form.append("intent", "update");
-      form.append("id", editingPage.id);
+      fetcher.submit(
+        {
+          intent: "update",
+          id: editingPage.id,
+          ...values,
+        },
+        { method: "post" },
+      );
     } else {
-      form.append("intent", "create");
+      fetcher.submit(
+        {
+          intent: "create",
+          ...values,
+        },
+        { method: "post" },
+      );
     }
-    form.append("slug", formData.slug);
-    form.append("title", formData.title);
-    form.append("content", formData.content);
-    form.append("metaTitle", formData.metaTitle);
-    form.append("metaDescription", formData.metaDescription);
-    form.append("status", formData.status);
-    fetcher.submit(form, { method: "post" });
   }
 
   function handleDelete(id: string) {
@@ -236,65 +294,54 @@ export default function PagesPage({
           <DialogHeader>
             <DialogTitle>{editingPage ? "编辑页面" : "创建页面"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="title">标题 *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
+                <Input id="title" {...form.register("title")} />
+                {form.formState.errors.title ? (
+                  <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug *</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="page-slug"
-                  required
-                />
+                <Input id="slug" placeholder="page-slug" {...form.register("slug")} />
+                {form.formState.errors.slug ? (
+                  <p className="text-sm text-red-500">{form.formState.errors.slug.message}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">状态</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => value && setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DRAFT">草稿</SelectItem>
-                    <SelectItem value="PUBLISHED">已发布</SelectItem>
-                    <SelectItem value="ARCHIVED">已归档</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="status"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DRAFT">草稿</SelectItem>
+                        <SelectItem value="PUBLISHED">已发布</SelectItem>
+                        <SelectItem value="ARCHIVED">已归档</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">SEO 标题</Label>
-                <Input
-                  id="metaTitle"
-                  value={formData.metaTitle}
-                  onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                />
+                <Input id="metaTitle" {...form.register("metaTitle")} />
               </div>
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="metaDescription">SEO 描述</Label>
-                <Input
-                  id="metaDescription"
-                  value={formData.metaDescription}
-                  onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                />
+                <Input id="metaDescription" {...form.register("metaDescription")} />
               </div>
               <div className="col-span-2 space-y-2">
                 <Label htmlFor="content">内容</Label>
                 <textarea
                   id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  {...form.register("content")}
                   className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   placeholder="页面内容 (支持 HTML)"
                 />

@@ -1,11 +1,21 @@
-import { useState } from "react";
-import { Form, Link, redirect, useActionData, useNavigation } from "react-router";
+import { Form, Link, redirect, useNavigation, useSubmit } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+
+const registerFormSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email("请输入有效邮箱"),
+  password: z.string().min(1, "请输入密码"),
+});
+
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 export async function loader({ request }: { request: Request }) {
   try {
@@ -21,15 +31,18 @@ export async function loader({ request }: { request: Request }) {
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const parsed = registerFormSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  if (!email || !password) {
-    return { error: "请填写邮箱和密码" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "请填写邮箱和密码" };
   }
 
   try {
+    const { name, email, password } = parsed.data;
     const result = await api.auth.register(email, password, name, request);
     toast.success("注册成功");
     const headers = new Headers();
@@ -44,11 +57,21 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function RegisterPage({ actionData }: { actionData?: { error?: string } }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const navigation = useNavigation();
+  const submit = useSubmit();
   const isLoading = navigation.state === "submitting";
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  function onSubmit(values: RegisterFormValues) {
+    submit(values, { method: "post" });
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -58,41 +81,39 @@ export default function RegisterPage({ actionData }: { actionData?: { error?: st
           <CardDescription>创建一个新账号</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form method="post" className="space-y-4">
+          <Form method="post" className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <Label htmlFor="name">名称</Label>
               <Input
                 id="name"
-                name="name"
                 type="text"
                 placeholder="您的名字"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                {...form.register("name")}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">邮箱</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...form.register("email")}
               />
+              {form.formState.errors.email ? (
+                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">密码</Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                {...form.register("password")}
               />
+              {form.formState.errors.password ? (
+                <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+              ) : null}
             </div>
             {actionData?.error && (
               <p className="text-sm text-red-500">{actionData.error}</p>

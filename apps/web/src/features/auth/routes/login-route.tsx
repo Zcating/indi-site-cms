@@ -1,11 +1,20 @@
-import { useState } from "react";
-import { Form, Link, redirect, useActionData, useNavigation } from "react-router";
+import { Form, Link, redirect, useNavigation, useSubmit } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+
+const loginFormSchema = z.object({
+  email: z.string().email("请输入有效邮箱"),
+  password: z.string().min(1, "请输入密码"),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export async function loader({ request }: { request: Request }) {
   try {
@@ -21,14 +30,17 @@ export async function loader({ request }: { request: Request }) {
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const parsed = loginFormSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  if (!email || !password) {
-    return { error: "请填写邮箱和密码" };
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "请填写邮箱和密码" };
   }
 
   try {
+    const { email, password } = parsed.data;
     const result = await api.auth.login(email, password, request);
     toast.success("登录成功");
     const headers = new Headers();
@@ -43,10 +55,20 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function LoginPage({ actionData }: { actionData?: { error?: string } }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const navigation = useNavigation();
+  const submit = useSubmit();
   const isLoading = navigation.state === "submitting";
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  function onSubmit(values: LoginFormValues) {
+    submit(values, { method: "post" });
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -56,30 +78,30 @@ export default function LoginPage({ actionData }: { actionData?: { error?: strin
           <CardDescription>输入您的账号和密码登录系统</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form method="post" className="space-y-4">
+          <Form method="post" className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <Label htmlFor="email">邮箱</Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...form.register("email")}
               />
+              {form.formState.errors.email ? (
+                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">密码</Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                {...form.register("password")}
               />
+              {form.formState.errors.password ? (
+                <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+              ) : null}
             </div>
             {actionData?.error && (
               <p className="text-sm text-red-500">{actionData.error}</p>
