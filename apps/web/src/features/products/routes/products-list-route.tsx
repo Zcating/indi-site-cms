@@ -31,7 +31,7 @@ import type { Route } from "./+types/products-list-route";
 
 const productEditSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
-  slug: z.string().trim().min(1, "请输入产品 Slug"),
+  slug: z.string().optional(),
   description: z.string().trim(),
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"]),
   imageUrl: z.string().optional(),
@@ -143,7 +143,10 @@ export default function ProductsPage({
     formData.append("intent", "update");
     formData.append("id", editingProduct.id);
     formData.append("name", values.name);
-    formData.append("slug", values.slug);
+    // 只有当 slug 有值时才提交，否则让后端自动处理
+    if (values.slug) {
+        formData.append("slug", values.slug);
+    }
     if (values.description) formData.append("description", values.description);
     formData.append("status", values.status);
 
@@ -195,10 +198,6 @@ export default function ProductsPage({
       label: "名称",
       value: "name",
       className: "font-medium",
-    },
-    {
-      label: "别名",
-      render: (product) => <code className="rounded bg-gray-100 px-2 py-1 text-xs">/{product.slug}</code>,
     },
     {
       label: "图片",
@@ -288,12 +287,9 @@ export default function ProductsPage({
                   <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
                 ) : null}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug *</Label>
+              <div className="space-y-2 hidden">
+                <Label htmlFor="slug">Slug</Label>
                 <Input id="slug" {...form.register("slug")} />
-                {form.formState.errors.slug ? (
-                  <p className="text-sm text-red-500">{form.formState.errors.slug.message}</p>
-                ) : null}
               </div>
               <div className="space-y-2">
                 <Label>图片</Label>
