@@ -7,6 +7,7 @@
     "dev:web": "pnpm --filter web run dev",
     "dev:server": "pnpm --filter server run dev",
     "dev:main-site": "pnpm --filter main-site run dev",
+    "build:main-site": "pnpm --filter main-site run build",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
