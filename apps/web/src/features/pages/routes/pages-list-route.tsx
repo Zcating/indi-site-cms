@@ -34,6 +34,7 @@ const heroSchema = z.object({
 });
 
 const productSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   flavor: z.string(),
   tone: z.string(),
@@ -166,9 +167,26 @@ const defaultSiteJson = {
 
 // --- Helper Functions ---
 
-function transformToForm(json: any): any {
+function transformToForm(json: any, products: Product[] = []): any {
   const data = JSON.parse(JSON.stringify(json || defaultSiteJson));
   
+  // Refresh product data from backend if linked
+  if (data.products && Array.isArray(data.products)) {
+    data.products = data.products.map((p: any) => {
+      if (p.id) {
+        const latest = products.find(prod => prod.id === p.id);
+        if (latest) {
+          return {
+            ...p,
+            name: latest.name,
+            flavor: latest.description || p.flavor,
+          };
+        }
+      }
+      return p;
+    });
+  }
+
   if (data.oem?.features) {
     data.oem.features = data.oem.features.map((s: string) => ({ value: s }));
   }
@@ -324,7 +342,7 @@ export default function PagesPage({
     defaultValues = {
       slug: initialPage.slug,
       title: initialPage.title,
-      siteJson: transformToForm(siteJson),
+      siteJson: transformToForm(siteJson, availableProducts),
       metaTitle: initialPage.metaTitle || "",
       metaDescription: initialPage.metaDescription || "",
       status: initialPage.status,
@@ -333,7 +351,7 @@ export default function PagesPage({
     defaultValues = {
       slug: "index",
       title: "官网首页",
-      siteJson: transformToForm(defaultSiteJson),
+      siteJson: transformToForm(defaultSiteJson, availableProducts),
       metaTitle: "",
       metaDescription: "",
       status: "DRAFT",
@@ -402,6 +420,7 @@ export default function PagesPage({
                   <Select onValueChange={(value) => {
                     const p = availableProducts.find((p: Product) => p.id === value);
                     if (p) {
+                      form.setValue(`siteJson.products.${index}.id`, p.id);
                       form.setValue(`siteJson.products.${index}.name`, p.name);
                       if (p.description) form.setValue(`siteJson.products.${index}.flavor`, p.description);
                     }
