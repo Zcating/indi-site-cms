@@ -231,7 +231,7 @@ export default function UsersPage({ loaderData }: { loaderData: { users: User[];
                 <Label htmlFor="role">角色</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  onValueChange={(value) => value && setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
