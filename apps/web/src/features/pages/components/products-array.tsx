@@ -1,10 +1,9 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, Image as ImageIcon } from "lucide-react";
 import { type Product } from "@/lib/api";
+import { Selector } from "@/components/internal/selector";
 
 interface ProductsArrayProps {
   availableProducts: Product[];
@@ -42,8 +41,8 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
               </Button>
               <CardContent className="pt-6 grid gap-4">
                 <div className="grid gap-2">
-                  <Select
-                    value={currentProduct?.id}
+                  <Selector
+                    value={currentProduct?.id || ""}
                     onValueChange={(value) => {
                       const p = availableProducts.find((p: Product) => p.id === value);
                       if (p) {
@@ -57,16 +56,9 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
                         }
                       }
                     }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="从产品库选择 (可选)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableProducts?.map((p: Product) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={availableProducts.map((p: Product) => ({ value: p.id, label: p.name }))}
+                    placeholder="从产品库选择 (可选)"
+                  />
                 </div>
 
                 <div className="aspect-video w-full relative overflow-hidden rounded-md border bg-muted/20 flex items-center justify-center">

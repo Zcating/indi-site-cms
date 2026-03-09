@@ -55,6 +55,9 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 export async function loader({ request }: { request: Request }) {
   const users = await api.users.list(request);
   const currentUser = await api.auth.me(request);
+  if (!currentUser) {
+    return { users: [], currentUser: null };
+  }
   return { users, currentUser };
 }
 
@@ -64,7 +67,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === "create") {
     const currentUser = await api.auth.me(request);
-    if (currentUser.role !== "ADMIN") {
+    if (!currentUser || currentUser.role !== "ADMIN") {
       return { error: "无权限添加用户" };
     }
 
@@ -249,7 +252,7 @@ export default function UsersPage({ loaderData }: Route.ComponentProps) {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
-        {currentUser.role === "ADMIN" && (
+        {currentUser?.role === "ADMIN" && (
           <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             添加用户
