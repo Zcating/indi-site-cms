@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Form, Link, redirect, useActionData, useSubmit } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,36 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-function generateSlug(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "") // 移除非字母数字字符
-    .replace(/\s+/g, "-") // 空格转连字符
-    .replace(/-+/g, "-"); // 移除重复连字符
-}
+import { ImageUploader } from "@/components/internal/image-uploader";
+import { toast } from "sonner";
 
 const productCreateSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
-  slug: z.string().trim().min(1, "请输入产品 Slug"),
   description: z.string().trim(),
-  price: z.coerce.number().nonnegative("价格不能小于 0"),
-  stock: z.coerce.number().int("库存必须为整数").nonnegative("库存不能小于 0"),
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"]),
+  imageIds: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
 });
 
 type ProductCreateValues = z.infer<typeof productCreateSchema>;
 
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
+  const imageIds = formData.getAll("imageIds") as string[];
+
   const parsed = productCreateSchema.safeParse({
     name: formData.get("name"),
-    slug: formData.get("slug"),
     description: formData.get("description"),
-    price: formData.get("price"),
-    stock: formData.get("stock"),
     status: formData.get("status"),
+    imageIds: imageIds.length > 0 ? imageIds : undefined,
   });
 
   if (!parsed.success) {
@@ -58,28 +50,41 @@ export async function action({ request }: { request: Request }) {
 export default function NewProductPage() {
   const actionData = useActionData<{ error?: string }>();
   const submit = useSubmit();
+
   const form = useForm<ProductCreateValues>({
     resolver: zodResolver(productCreateSchema),
     defaultValues: {
       name: "",
-      slug: "",
       description: "",
-      price: 0,
-      stock: 0,
       status: "DRAFT",
+      imageUrl: "",
     },
   });
 
-  // 监听名称变化自动生成 Slug
-  const name = form.watch("name");
-  useEffect(() => {
-    if (name && !form.getValues("slug")) {
-      form.setValue("slug", generateSlug(name));
-    }
-  }, [name, form]);
+  async function onSubmit(values: ProductCreateValues) {
+    const formData = new FormData();
+    formData.append("name", values.name);
+    if (values.description) formData.append("description", values.description);
+    formData.append("status", values.status);
 
-  function onSubmit(values: ProductCreateValues) {
-    submit(values, { method: "post" });
+    const imageUrl = values.imageUrl;
+
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "image.png", { type: blob.type });
+        const image = await api.images.upload(file, { title: values.name });
+        formData.append("imageIds", image.id);
+        toast.success("图片上传成功");
+      } catch (error) {
+        toast.error("图片上传失败");
+        console.error(error);
+        return;
+      }
+    }
+
+    submit(formData, { method: "post" });
   }
 
   return (
@@ -89,7 +94,7 @@ export default function NewProductPage() {
       </CardHeader>
       <CardContent>
         <Form method="post" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-1 gap-6 py-2">
             <div className="space-y-2">
               <Label htmlFor="name">名称 *</Label>
               <Input id="name" {...form.register("name")} />
@@ -97,27 +102,21 @@ export default function NewProductPage() {
                 <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
               ) : null}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug *</Label>
-              <Input id="slug" placeholder="new-product" {...form.register("slug")} />
-              {form.formState.errors.slug ? (
-                <p className="text-sm text-red-500">{form.formState.errors.slug.message}</p>
-              ) : null}
+              <Label>图片</Label>
+              <Controller
+                name="imageUrl"
+                control={form.control}
+                render={({ field }) => (
+                  <ImageUploader 
+                    value={field.value}
+                    onChange={field.onChange} 
+                  />
+                )}
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="price">价格 *</Label>
-              <Input id="price" type="number" step="0.01" min={0} {...form.register("price")} />
-              {form.formState.errors.price ? (
-                <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">库存</Label>
-              <Input id="stock" type="number" min={0} {...form.register("stock")} />
-              {form.formState.errors.stock ? (
-                <p className="text-sm text-red-500">{form.formState.errors.stock.message}</p>
-              ) : null}
-            </div>
+
             <div className="space-y-2">
               <Label htmlFor="status">状态</Label>
               <Controller
@@ -138,7 +137,8 @@ export default function NewProductPage() {
                 )}
               />
             </div>
-            <div className="col-span-2 space-y-2">
+
+            <div className="space-y-2">
               <Label htmlFor="description">描述</Label>
               <textarea
                 id="description"
@@ -148,6 +148,7 @@ export default function NewProductPage() {
               />
             </div>
           </div>
+
           <div className="mt-6 flex gap-3">
             {actionData?.error ? (
               <p className="text-sm text-red-500">{actionData.error}</p>

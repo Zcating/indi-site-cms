@@ -18,10 +18,9 @@ const productParamsSchema = z.object({
 
 const createProductBodySchema = z.object({
   name: z.string().trim().min(1),
-  slug: z.string().trim().min(1),
+  slug: z.string().trim().min(1).optional(),
   description: z.string().trim().optional(),
-  price: z.coerce.number().nonnegative(),
-  stock: z.coerce.number().int().nonnegative().optional(),
+  imageIds: z.array(z.string().cuid()).optional(),
   status: productStatusSchema.optional()
 });
 
@@ -79,7 +78,8 @@ export async function productRoutes(fastify: FastifyInstance) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: { images: true }
       }),
       prisma.product.count({ where })
     ]);
@@ -102,7 +102,10 @@ export async function productRoutes(fastify: FastifyInstance) {
     }
 
     const { id } = parsedParams.data;
-    const product = await prisma.product.findUnique({ where: { id } });
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { images: true }
+    });
     if (!product) {
       return reply.status(404).send({ error: 'Product not found' });
     }
@@ -110,13 +113,35 @@ export async function productRoutes(fastify: FastifyInstance) {
     return product;
   });
 
+  function generateSlug(name: string) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const parsedBody = createProductBodySchema.safeParse(request.body);
     if (!parsedBody.success) {
       return sendZodError(reply, parsedBody.error);
     }
 
-    const { name, slug, description, price, stock, status } = parsedBody.data;
+    const { name, slug: providedSlug, description, status, imageIds } = parsedBody.data;
+
+    let slug = providedSlug;
+    if (!slug) {
+      slug = generateSlug(name);
+      // Ensure uniqueness if auto-generated
+      let uniqueSlug = slug;
+      let counter = 1;
+      while (await prisma.product.findUnique({ where: { slug: uniqueSlug } })) {
+        uniqueSlug = `${slug}-${counter}`;
+        counter++;
+      }
+      slug = uniqueSlug;
+    }
 
     const existingProduct = await prisma.product.findUnique({ where: { slug } });
     if (existingProduct) {
@@ -128,10 +153,12 @@ export async function productRoutes(fastify: FastifyInstance) {
         name,
         slug,
         description,
-        price: new Prisma.Decimal(price),
-        stock: stock ?? 0,
-        status: status ?? 'DRAFT'
-      }
+        status: status ?? 'DRAFT',
+        images: imageIds ? {
+          connect: imageIds.map((id) => ({ id }))
+        } : undefined
+      },
+      include: { images: true }
     });
 
     return product;
@@ -149,7 +176,7 @@ export async function productRoutes(fastify: FastifyInstance) {
     }
 
     const { id } = parsedParams.data;
-    const { slug } = parsedBody.data;
+    const { slug, imageIds } = parsedBody.data;
 
     if (slug) {
       const existingProduct = await prisma.product.findFirst({
@@ -164,14 +191,20 @@ export async function productRoutes(fastify: FastifyInstance) {
     if (parsedBody.data.name !== undefined) data.name = parsedBody.data.name;
     if (parsedBody.data.slug !== undefined) data.slug = parsedBody.data.slug;
     if (parsedBody.data.description !== undefined) data.description = parsedBody.data.description;
-    if (parsedBody.data.price !== undefined) data.price = new Prisma.Decimal(parsedBody.data.price);
-    if (parsedBody.data.stock !== undefined) data.stock = parsedBody.data.stock;
     if (parsedBody.data.status !== undefined) data.status = parsedBody.data.status;
+    
+    if (imageIds) {
+      data.images = {
+        set: [], // Clear existing relations
+        connect: imageIds.map((id) => ({ id })) // Connect new ones
+      };
+    }
 
     try {
       const product = await prisma.product.update({
         where: { id },
-        data
+        data,
+        include: { images: true }
       });
       return product;
     } catch (error: unknown) {

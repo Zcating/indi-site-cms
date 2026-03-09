@@ -4,6 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api, type Product } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,19 +26,20 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { ImageUploader } from "@/components/internal/image-uploader";
 
 const productEditSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
   slug: z.string().trim().min(1, "请输入产品 Slug"),
   description: z.string().trim(),
-  price: z.coerce.number().nonnegative("价格不能小于 0"),
-  stock: z.coerce.number().int("库存必须为整数").nonnegative("库存不能小于 0"),
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"]),
+  imageUrl: z.string().optional(),
 });
 
 const productUpdateActionSchema = productEditSchema.extend({
   intent: z.literal("update"),
   id: z.string().min(1),
+  imageIds: z.array(z.string()).optional(),
 });
 
 const productDeleteActionSchema = z.object({
@@ -63,9 +65,8 @@ export async function action({ request }: { request: Request }) {
       name: formData.get("name"),
       slug: formData.get("slug"),
       description: formData.get("description"),
-      price: formData.get("price"),
-      stock: formData.get("stock"),
       status: formData.get("status"),
+      imageIds: formData.getAll("imageIds"),
     });
 
     if (!parsed.success) {
@@ -124,9 +125,8 @@ export default function ProductsPage({
       name: "",
       slug: "",
       description: "",
-      price: 0,
-      stock: 0,
       status: "DRAFT",
+      imageUrl: "",
     },
   });
 
@@ -136,23 +136,48 @@ export default function ProductsPage({
       name: product.name,
       slug: product.slug,
       description: product.description || "",
-      price: Number(product.price),
-      stock: product.stock,
       status: product.status,
+      imageUrl: product.images?.[0]?.url || "",
     });
     setDialogOpen(true);
   }
 
-  function handleSubmit(values: ProductEditValues) {
+  async function handleSubmit(values: ProductEditValues) {
     if (!editingProduct) return;
-    fetcher.submit(
-      {
-        intent: "update",
-        id: editingProduct.id,
-        ...values,
-      },
-      { method: "post" },
-    );
+    const formData = new FormData();
+    formData.append("intent", "update");
+    formData.append("id", editingProduct.id);
+    formData.append("name", values.name);
+    formData.append("slug", values.slug);
+    if (values.description) formData.append("description", values.description);
+    formData.append("status", values.status);
+
+    const imageUrl = values.imageUrl;
+
+    // 如果有新选择的文件，先上传
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "image.png", { type: blob.type });
+        const image = await api.images.upload(file, { title: values.name });
+        formData.append("imageIds", image.id);
+        toast.success("图片上传成功");
+      } catch (error) {
+        toast.error("图片上传失败");
+        console.error(error);
+        return;
+      }
+    } else if (imageUrl) {
+      // 如果是原有图片，查找对应的 ID
+      const existingImage = editingProduct.images?.find(img => img.url === imageUrl);
+      if (existingImage) {
+        formData.append("imageIds", existingImage.id);
+      }
+    }
+
+    fetcher.submit(formData, { method: "post" });
+    setDialogOpen(false);
   }
 
   function handleDelete(id: string) {
@@ -181,25 +206,38 @@ export default function ProductsPage({
       render: (product) => <code className="rounded bg-gray-100 px-2 py-1 text-xs">/{product.slug}</code>,
     },
     {
-      label: "价格",
-      render: (product) => `¥${Number(product.price).toFixed(2)}`,
-    },
-    {
-      label: "库存",
-      value: "stock",
+      label: "图片",
+      render: (product) => (
+        <div className="flex -space-x-2 overflow-hidden">
+          {product.images?.slice(0, 3).map((img) => (
+            <img
+              key={img.id}
+              src={img.url}
+              alt={product.name}
+              className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+            />
+          ))}
+          {product.images && product.images.length > 3 && (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-2 ring-white text-xs text-gray-500">
+              +{product.images.length - 3}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       label: "状态",
       render: (product) => (
         <span
-          className={`rounded px-2 py-1 text-xs ${product.status === "ACTIVE"
-            ? "bg-green-100 text-green-800"
-            : product.status === "DRAFT"
-              ? "bg-yellow-100 text-yellow-800"
-              : product.status === "INACTIVE"
-                ? "bg-orange-100 text-orange-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
+          className={cn(
+            "rounded px-2 py-1 text-xs",
+            {
+              "bg-green-100 text-green-800": product.status === "ACTIVE",
+              "bg-yellow-100 text-yellow-800": product.status === "DRAFT",
+              "bg-orange-100 text-orange-800": product.status === "INACTIVE",
+              "bg-gray-100 text-gray-800": !["ACTIVE", "DRAFT", "INACTIVE"].includes(product.status)
+            }
+          )}
         >
           {statusMap[product.status]}
         </span>
@@ -263,18 +301,17 @@ export default function ProductsPage({
                 ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">价格 *</Label>
-                <Input id="price" type="number" step="0.01" min={0} {...form.register("price")} />
-                {form.formState.errors.price ? (
-                  <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
-                ) : null}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock">库存</Label>
-                <Input id="stock" type="number" min={0} {...form.register("stock")} />
-                {form.formState.errors.stock ? (
-                  <p className="text-sm text-red-500">{form.formState.errors.stock.message}</p>
-                ) : null}
+                <Label>图片</Label>
+                <Controller
+                  name="imageUrl"
+                  control={form.control}
+                  render={({ field }) => (
+                    <ImageUploader
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">状态</Label>

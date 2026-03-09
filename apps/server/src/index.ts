@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
@@ -16,7 +17,7 @@ import { pageRoutes } from './routes/pages.js';
 import { productRoutes } from './routes/products.js';
 
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/indi_site_cms?schema=public'
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/indi_site_cms?schema=public'
 });
 
 export const prisma = new PrismaClient({ adapter });

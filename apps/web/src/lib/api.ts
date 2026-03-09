@@ -118,9 +118,9 @@ export const api = {
       return request<{ data: Product[]; pagination: Pagination }>(`/products${query ? `?${query}` : ''}`, { serverRequest });
     },
     get: (id: string, serverRequest?: Request) => request<Product>(`/products/${id}`, { serverRequest }),
-    create: (data: { name: string; slug: string; description?: string; price: number; stock?: number; status?: string }, serverRequest?: Request) =>
+    create: (data: { name: string; slug?: string; description?: string; imageIds?: string[]; status?: string }, serverRequest?: Request) =>
       request<Product>('/products', { method: 'POST', body: data, serverRequest }),
-    update: (id: string, data: { name?: string; slug?: string; description?: string; price?: number; stock?: number; status?: string }, serverRequest?: Request) =>
+    update: (id: string, data: { name?: string; slug?: string; description?: string; imageIds?: string[]; status?: string }, serverRequest?: Request) =>
       request<Product>(`/products/${id}`, { method: 'PUT', body: data, serverRequest }),
     delete: (id: string, serverRequest?: Request) => request<{ success: boolean }>(`/products/${id}`, { method: 'DELETE', serverRequest }),
   },
@@ -134,6 +134,7 @@ export const api = {
       const query = searchParams.toString();
       return request<{ data: Image[]; pagination: Pagination }>(`/images${query ? `?${query}` : ''}`, { serverRequest });
     },
+    get: (id: string, serverRequest?: Request) => request<Image>(`/images/${id}`, { serverRequest }),
     upload: async (file: File, metadata: { title?: string; alt?: string; category?: string; tags?: string[] }, serverRequest?: Request) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -222,8 +223,7 @@ export interface Product {
   name: string;
   slug: string;
   description?: string;
-  price: number | string;
-  stock: number;
+  images?: Image[];
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt: string;

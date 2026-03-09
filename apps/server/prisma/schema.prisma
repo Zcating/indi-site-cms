@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -83,7 +82,6 @@ model Product {
   slug        String        @unique
   description String?
   images      Image[]
-  stock       Int           @default(0)
   status      ProductStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
