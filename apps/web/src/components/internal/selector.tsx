@@ -12,8 +12,8 @@ interface Option {
 }
 
 interface SelectorProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  value?: string | null;
+  onValueChange?: (value: string | null) => void;
   options: Option[];
   placeholder?: string;
   className?: string;

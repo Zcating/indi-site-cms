@@ -1,9 +1,10 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, X, Image as ImageIcon } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { type Product } from "@/lib/api";
 import { Selector } from "@/components/internal/selector";
+import { Image } from "@/components/internal/image";
 
 interface ProductsArrayProps {
   availableProducts: Product[];
@@ -61,20 +62,10 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
                   />
                 </div>
 
-                <div className="aspect-video w-full relative overflow-hidden rounded-md border bg-muted/20 flex items-center justify-center">
-                  {currentProduct?.image ? (
-                    <img
-                      src={currentProduct.image}
-                      alt={currentProduct.name || "Product"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
-                      <ImageIcon className="h-8 w-8 opacity-20" />
-                      <span className="text-xs opacity-50">暂无图片</span>
-                    </div>
-                  )}
-                </div>
+                <Image
+                  src={currentProduct?.image}
+                  alt={currentProduct?.name || "Product"}
+                />
 
                 <div className="grid gap-1">
                   <div className="font-medium">{currentProduct?.name || "未选择产品"}</div>
