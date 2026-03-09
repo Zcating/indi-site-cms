@@ -109,8 +109,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function ProductsPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { products: initialProducts } = loaderData;
-  const [products] = useState(initialProducts);
+  const { products } = loaderData;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
