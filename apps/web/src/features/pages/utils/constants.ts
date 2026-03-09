@@ -1,0 +1,45 @@
+export const defaultSiteJson = {
+  brand: "mimoo",
+  tagline: "Next Level Kawaii Bakery",
+  hero: {
+    badge: "MIMOO · 日式烘焙工坊",
+    title: "日式手工烘焙",
+    highlight: "遇见甜蜜的幸福滋味",
+    description: "来自日本的手作温度，每一口都是心动的味道。严格选用优质原料，传统工艺与现代技术结合。"
+  },
+  products: [
+    { name: "草莓大福", flavor: "软糯Q弹的和果子", tone: "from-pink-300 to-rose-300", emoji: "🍡" },
+    { name: "奶油面包", flavor: "绵密奶香入口即化", tone: "from-amber-200 to-yellow-300", emoji: "🍞" },
+    { name: "抹茶红豆", flavor: "宇治抹茶配甜蜜红豆", tone: "from-green-200 to-emerald-200", emoji: "🍰" },
+    { name: "樱花麻薯", flavor: "春日限定的浪漫", tone: "from-pink-200 to-rose-200", emoji: "🌸" },
+    { name: "黄油曲奇", flavor: "酥脆香浓的经典", tone: "from-amber-100 to-orange-100", emoji: "🍪" },
+    { name: "卡斯特拉", flavor: "日式柔软的云朵蛋糕", tone: "from-yellow-100 to-amber-100", emoji: "🧁" }
+  ],
+  oem: {
+    title: "代加工服务",
+    description: "我们拥有专业的烘焙工厂和经验丰富的研发团队，为您提供从配方开发到量产的一站式服务。",
+    features: ["📦 多种包装规格可选", "🔬 配方定制研发", "📋 品质检测认证", "🚚 物流配送支持"],
+    media: [
+      { type: "video", title: "和面到醒发", source: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+      { type: "image", title: "自动化烘焙线", source: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=80" },
+      { type: "image", title: "蛋糕装饰工段", source: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=1400&q=80" }
+    ]
+  },
+  about: {
+    title: "关于 Mimoo",
+    content: [
+      "Mimoo 创立于对甜点的热爱。我们相信，美食不仅仅是味觉的享受，更是心灵的治愈。",
+      "每一款产品都倾注了我们对品质的坚持和对美学的追求。希望 Mimoo 的甜点能为您带来心动的时刻。"
+    ],
+    stats: [
+      { value: "5+", label: "年经验" },
+      { value: "50+", label: "款产品" },
+      { value: "10k+", label: "忠实粉丝" }
+    ]
+  },
+  consult: {
+    title: "联系我们",
+    subtitle: "有任何问题或合作意向，欢迎随时联系我们",
+    channels: ["微信/企微", "电话回呼", "邮箱报价"]
+  }
+};
