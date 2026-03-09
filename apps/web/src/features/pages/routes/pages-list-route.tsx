@@ -3,10 +3,11 @@ import { useFetcher } from "react-router";
 import { useForm, useFieldArray, Controller, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { api, type Page } from "@/lib/api";
+import { api, type Page, type Product } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Selector } from "@/components/internal/selector";
 import {
@@ -234,8 +235,15 @@ function StringArrayField({ control, name, label, placeholder }: { control: Cont
 // --- Loader & Action ---
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const data = await api.pages.list({ page: 1, limit: 10 }, request);
-  return { pages: data.data, pagination: data.pagination };
+  const [pagesData, productsData] = await Promise.all([
+    api.pages.list({ page: 1, limit: 10 }, request),
+    api.products.list({ limit: 100 }, request),
+  ]);
+  return { 
+    pages: pagesData.data, 
+    pagination: pagesData.pagination,
+    products: productsData.data,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -299,7 +307,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function PagesPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { pages } = loaderData;
+  const { pages, products: availableProducts } = loaderData;
   const initialPage = pages[0] || null;
   const [editingPage] = useState<Page | null>(initialPage);
 
@@ -390,6 +398,24 @@ export default function PagesPage({
                 <X className="h-4 w-4 text-muted-foreground" />
               </Button>
               <CardContent className="pt-6 grid gap-2">
+                <div className="mb-2">
+                  <Select onValueChange={(value) => {
+                    const p = availableProducts.find((p: Product) => p.id === value);
+                    if (p) {
+                      form.setValue(`siteJson.products.${index}.name`, p.name);
+                      if (p.description) form.setValue(`siteJson.products.${index}.flavor`, p.description);
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="从产品库选择 (可选)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableProducts?.map((p: Product) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Input placeholder="名称" {...register(`siteJson.products.${index}.name`)} />
                 <Input placeholder="口味描述" {...register(`siteJson.products.${index}.flavor`)} />
                 <Input placeholder="色调 (Tailwind)" {...register(`siteJson.products.${index}.tone`)} />
