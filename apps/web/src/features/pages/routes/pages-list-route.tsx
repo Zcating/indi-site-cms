@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFetcher } from "react-router";
-import { api } from "@/lib/api";
+import { api, type Page } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,11 +88,18 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } } }) {
+export default function PagesPage({
+  loaderData,
+}: {
+  loaderData: {
+    pages: Page[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  };
+}) {
   const { pages: initialPages } = loaderData;
   const [pages] = useState(initialPages);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPage, setEditingPage] = useState<any>(null);
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [formData, setFormData] = useState({
     slug: "",
     title: "",
@@ -110,7 +117,7 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
     setDialogOpen(true);
   }
 
-  function openEditDialog(page: any) {
+  function openEditDialog(page: Page) {
     setEditingPage(page);
     setFormData({
       slug: page.slug,
@@ -153,43 +160,68 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">官网管理</h1>
-        <Button onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />创建页面</Button>
+        <Button onClick={openCreateDialog}>
+          <Plus className="mr-2 h-4 w-4" />
+          创建页面
+        </Button>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>页面列表</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>页面列表</CardTitle>
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow><TableHead>标题</TableHead><TableHead>Slug</TableHead><TableHead>SEO 标题</TableHead><TableHead>状态</TableHead><TableHead>操作</TableHead></TableRow>
+              <TableRow>
+                <TableHead>标题</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>SEO 标题</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>操作</TableHead>
+              </TableRow>
             </TableHeader>
             <TableBody>
               {pages.map((page) => (
                 <TableRow key={page.id}>
                   <TableCell className="font-medium">{page.title}</TableCell>
-                  <TableCell><code className="text-sm bg-gray-100 px-2 py-1 rounded">/{page.slug}</code></TableCell>
+                  <TableCell>
+                    <code className="rounded bg-gray-100 px-2 py-1 text-sm">/{page.slug}</code>
+                  </TableCell>
                   <TableCell>{page.metaTitle || "-"}</TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs ${page.status === "PUBLISHED" ? "bg-green-100 text-green-800" : page.status === "DRAFT" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>
+                    <span
+                      className={`rounded px-2 py-1 text-xs ${
+                        page.status === "PUBLISHED"
+                          ? "bg-green-100 text-green-800"
+                          : page.status === "DRAFT"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {statusMap[page.status]}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(page)}><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(page)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button asChild variant="ghost" size="icon">
                         <a href={`/${page.slug}`} target="_blank" rel="noreferrer" title="跳转官网">
-                          <Eye className="w-4 h-4 text-blue-500" />
+                          <Eye className="h-4 w-4 text-blue-500" />
                         </a>
                       </Button>
                       <Button asChild variant="ghost" size="icon">
                         <a href={`/api/pages/${page.id}/export-html`} title="导出 HTML">
-                          <Download className="w-4 h-4 text-emerald-600" />
+                          <Download className="h-4 w-4 text-emerald-600" />
                         </a>
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(page.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(page.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -201,29 +233,82 @@ export default function PagesPage({ loaderData }: { loaderData: { pages: any[]; 
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle>{editingPage ? "编辑页面" : "创建页面"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingPage ? "编辑页面" : "创建页面"}</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4 py-4">
-              <div className="space-y-2"><Label htmlFor="title">标题 *</Label><Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
-              <div className="space-y-2"><Label htmlFor="slug">Slug *</Label><Input id="slug" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="page-slug" required /></div>
-              <div className="space-y-2"><Label htmlFor="status">状态</Label>
-                <Select value={formData.status} onValueChange={(value) => value && setFormData({ ...formData, status: value })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="DRAFT">草稿</SelectItem><SelectItem value="PUBLISHED">已发布</SelectItem><SelectItem value="ARCHIVED">已归档</SelectItem></SelectContent>
+              <div className="space-y-2">
+                <Label htmlFor="title">标题 *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug *</Label>
+                <Input
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  placeholder="page-slug"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">状态</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => value && setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">草稿</SelectItem>
+                    <SelectItem value="PUBLISHED">已发布</SelectItem>
+                    <SelectItem value="ARCHIVED">已归档</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label htmlFor="metaTitle">SEO 标题</Label><Input id="metaTitle" value={formData.metaTitle} onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })} /></div>
-              <div className="space-y-2 col-span-2"><Label htmlFor="metaDescription">SEO 描述</Label><Input id="metaDescription" value={formData.metaDescription} onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })} /></div>
-              <div className="space-y-2 col-span-2"><Label htmlFor="content">内容</Label><textarea id="content" value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="页面内容 (支持 HTML)" /></div>
+              <div className="space-y-2">
+                <Label htmlFor="metaTitle">SEO 标题</Label>
+                <Input
+                  id="metaTitle"
+                  value={formData.metaTitle}
+                  onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="metaDescription">SEO 描述</Label>
+                <Input
+                  id="metaDescription"
+                  value={formData.metaDescription}
+                  onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="content">内容</Label>
+                <textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="页面内容 (支持 HTML)"
+                />
+              </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                取消
+              </Button>
               <Button type="submit">{editingPage ? "更新" : "创建"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

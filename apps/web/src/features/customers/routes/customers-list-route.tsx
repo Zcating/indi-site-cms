@@ -72,7 +72,14 @@ export async function action({ request }: { request: Request }) {
   return { error: "未知操作" };
 }
 
-export default function CustomersPage({ loaderData }: { loaderData: { customers: Customer[]; pagination: { page: number; limit: number; total: number; totalPages: number } } }) {
+export default function CustomersPage({
+  loaderData,
+}: {
+  loaderData: {
+    customers: Customer[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  };
+}) {
   const { customers: initialCustomers } = loaderData;
   const [customers] = useState(initialCustomers);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -135,11 +142,11 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">客户管理</h1>
         <Button asChild>
           <Link to="/admin/customers/new">
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             添加客户
           </Link>
         </Button>
@@ -170,12 +177,12 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
                   <TableCell>{customer.company || "-"}</TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
+                      className={`rounded px-2 py-1 text-xs ${
                         customer.status === "ACTIVE"
                           ? "bg-green-100 text-green-800"
                           : customer.status === "INACTIVE"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {statusMap[customer.status]}
@@ -184,10 +191,10 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(customer)}>
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(customer.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
                   </TableCell>
@@ -239,7 +246,7 @@ export default function CustomersPage({ loaderData }: { loaderData: { customers:
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 col-span-2">
+              <div className="col-span-2 space-y-2">
                 <Label htmlFor="address">地址</Label>
                 <Input
                   id="address"

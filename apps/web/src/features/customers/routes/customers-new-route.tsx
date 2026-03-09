@@ -51,7 +51,7 @@ export default function NewCustomerPage() {
               <Label htmlFor="company">公司</Label>
               <Input id="company" name="company" />
             </div>
-            <div className="space-y-2 col-span-2">
+            <div className="col-span-2 space-y-2">
               <Label htmlFor="address">地址</Label>
               <Input id="address" name="address" />
             </div>
