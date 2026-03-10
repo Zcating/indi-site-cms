@@ -21,15 +21,16 @@ test.describe("批量创建产品", () => {
     await expect(page).toHaveURL(/\/admin$/);
 
     // 2. 循环创建产品
-    for (const product of products) {
-      console.log(`正在创建产品: ${product.name}`);
+    for (const p of products) {
+      const uniqueName = `${p.name}-${unique}`;
+      console.log(`正在创建产品: ${uniqueName}`);
       
       // 导航到创建页面
       await page.goto("/admin/products/new");
       
       // 填写表单
-      await page.getByLabel("名称 *").fill(product.name);
-      await page.getByLabel("描述").fill(product.description);
+      await page.getByLabel("名称 *").fill(uniqueName);
+      await page.getByLabel("描述").fill(p.description);
       
       // 提交
       await page.getByRole("button", { name: "创建" }).click();
@@ -38,7 +39,7 @@ test.describe("批量创建产品", () => {
       await expect(page).toHaveURL(/\/admin\/products$/);
       
       // 验证列表包含该产品
-      await expect(page.getByText(product.name)).toBeVisible();
+      await expect(page.getByText(uniqueName)).toBeVisible();
     }
   });
 });

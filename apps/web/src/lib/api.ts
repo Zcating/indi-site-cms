@@ -225,6 +225,7 @@ export interface Product {
   slug: string;
   description?: string;
   imageUrl?: string;
+  images?: Image[];
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt: string;

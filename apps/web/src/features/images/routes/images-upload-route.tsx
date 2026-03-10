@@ -45,7 +45,7 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     const { file, title, alt, category } = parsed.data;
     await api.images.upload(file, { title, alt, category: category || undefined }, request);
-    throw redirect("/admin/images");
+    return redirect("/admin/images");
   } catch (error) {
     return { error: error instanceof Error ? error.message : "上传失败" };
   }

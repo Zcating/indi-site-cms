@@ -149,16 +149,23 @@ export default function ProductsPage({
       }
     }
 
-    fetcher.submit(values, { method: "post" });
+    fetcher.submit(
+      {
+        intent: "update",
+        id: editingProduct.id,
+        ...values,
+      },
+      { method: "post", encType: "application/json" }
+    );
     setDialogOpen(false);
   }
 
   function handleDelete(id: string) {
     if (!confirm("确定要删除这个产品吗？")) return;
-    const formData = new FormData();
-    formData.append("intent", "delete");
-    formData.append("id", id);
-    fetcher.submit(formData, { method: "post" });
+    fetcher.submit(
+      { intent: "delete", id },
+      { method: "post", encType: "application/json" }
+    );
   }
 
   const statusMap: Record<Product["status"], string> = {
@@ -179,7 +186,7 @@ export default function ProductsPage({
       render: (product) => (
         <div className="flex -space-x-2 overflow-hidden">
           <Image
-            src={product.imageUrl || ""}
+            src={product.imageUrl || product.images?.[0]?.url || ""}
             alt={product.name}
           />
         </div>

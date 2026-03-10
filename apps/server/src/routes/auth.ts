@@ -11,6 +11,7 @@ interface RegisterBody {
   email: string;
   password: string;
   name?: string;
+  role?: 'ADMIN' | 'USER';
 }
 
 export async function authRoutes(fastify: FastifyInstance) {
@@ -60,7 +61,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post<{ Body: RegisterBody }>('/register', async (request: FastifyRequest<{ Body: RegisterBody }>, reply: FastifyReply) => {
-    const { email, password, name } = request.body;
+    const { email, password, name, role } = request.body;
 
     if (!email || !password) {
       return reply.status(400).send({ error: 'Email and password are required' });
@@ -81,7 +82,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         email,
         password: hashedPassword,
         name: name || email.split('@')[0],
-        role: 'ADMIN'
+        role: role || 'ADMIN'
       }
     });
 

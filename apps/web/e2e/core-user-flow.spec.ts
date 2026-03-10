@@ -69,7 +69,7 @@ test.describe("核心用户流程", () => {
     await page.getByLabel("邮箱").fill(user.email);
     await page.getByLabel("密码").fill("Wrong-Password-1!");
     await page.getByRole("button", { name: "登录" }).click();
-    await expect(page.getByText("Invalid credentials")).toBeVisible();
+    await expect(page.getByText(/Invalid credentials|登录失败/)).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   });
 

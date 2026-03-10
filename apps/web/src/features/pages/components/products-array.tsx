@@ -22,6 +22,23 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
     name: "siteJson.products",
   });
 
+  const handleSelect = (index: number, value: string | null) => {
+    const p = availableProducts.find((p: Product) => p.id === value);
+    if (!p) {
+      return;
+    }
+    setValue(`siteJson.products.${index}.id`, p.id);
+    setValue(`siteJson.products.${index}.name`, p.name);
+    setValue(`siteJson.products.${index}.flavor`, p.description || "");
+    if (p.images && p.images.length > 0) {
+      setValue(`siteJson.products.${index}.image`, p.images[0].url);
+    } else if (p.imageUrl) {
+      setValue(`siteJson.products.${index}.image`, p.imageUrl);
+    } else {
+      setValue(`siteJson.products.${index}.image`, "");
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -36,7 +53,7 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
           const imageUrl = currentProduct?.image;
 
           return (
-            <Card key={field.id} className="relative">
+            <Card key={field.id} className="relative" data-testid="product-card">
               <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-2 h-6 w-6 z-10" onClick={() => remove(index)}>
                 <X className="h-4 w-4 text-muted-foreground" />
               </Button>
@@ -44,19 +61,7 @@ export function ProductsArray({ availableProducts }: ProductsArrayProps) {
                 <div className="grid gap-2">
                   <Selector
                     value={currentProduct?.id || ""}
-                    onValueChange={(value) => {
-                      const p = availableProducts.find((p: Product) => p.id === value);
-                      if (p) {
-                        setValue(`siteJson.products.${index}.id`, p.id);
-                        setValue(`siteJson.products.${index}.name`, p.name);
-                        if (p.description) setValue(`siteJson.products.${index}.flavor`, p.description);
-                        if (p.images && p.images.length > 0) {
-                          setValue(`siteJson.products.${index}.image`, p.images[0].url);
-                        } else {
-                          setValue(`siteJson.products.${index}.image`, "");
-                        }
-                      }
-                    }}
+                    onValueChange={(value) => handleSelect(index, value)}
                     options={availableProducts.map((p: Product) => ({ value: p.id, label: p.name }))}
                     placeholder="从产品库选择 (可选)"
                   />

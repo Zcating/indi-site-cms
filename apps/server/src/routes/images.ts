@@ -81,7 +81,7 @@ export async function imageRoutes(fastify: FastifyInstance) {
 
   fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const data = await request.file();
-    
+
     if (!data) {
       return reply.status(400).send({ error: 'No file uploaded' });
     }
@@ -92,7 +92,16 @@ export async function imageRoutes(fastify: FastifyInstance) {
     await fs.writeFile(filepath, buffer);
     const metadata = await getImageMetadata(buffer);
 
-    const { title, alt, category, tags } = request.body as any;
+    const fields = (data.fields || {}) as Record<string, unknown>;
+    const titleField = fields.title as { value?: string } | string | undefined;
+    const altField = fields.alt as { value?: string } | string | undefined;
+    const categoryField = fields.category as { value?: string } | string | undefined;
+    const tagsField = fields.tags as { value?: string } | string | undefined;
+
+    const title = typeof titleField === 'string' ? titleField : titleField?.value;
+    const alt = typeof altField === 'string' ? altField : altField?.value;
+    const category = typeof categoryField === 'string' ? categoryField : categoryField?.value;
+    const tags = typeof tagsField === 'string' ? tagsField : tagsField?.value;
 
     const image = await prisma.image.create({
       data: {
@@ -120,7 +129,7 @@ export async function imageRoutes(fastify: FastifyInstance) {
 
   fastify.delete<{ Params: ImageParams }>('/:id', async (request: FastifyRequest<{ Params: ImageParams }>, reply: FastifyReply) => {
     const { id } = request.params;
-    
+
     const image = await prisma.image.findUnique({
       where: { id }
     });

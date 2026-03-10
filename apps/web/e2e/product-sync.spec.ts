@@ -57,20 +57,16 @@ test.describe("产品数据同步功能", () => {
     // 在下拉框中选择该产品
     // 注意：Shadcn UI 的 Select 组件通常需要先点击 Trigger，再点击 Option
     // 假设是第一个添加的产品，或者根据 UI 结构定位
-    const card = page.locator(".grid > .relative").last(); // 获取最新添加的卡片
+    const card = page.getByTestId("product-card").last(); // 获取最新添加的卡片
     await card.getByRole("combobox").click();
     
     // 等待选项出现并点击
     await page.getByRole("option", { name: productName }).click();
     
     // 验证名称已自动填充
-    const nameInput = card.getByPlaceholder("名称");
-    await expect(nameInput).toHaveValue(productName);
+    // ProductsArray 显示的是文本，不是输入框
+    await expect(card.getByText(productName)).toBeVisible();
     
-    // 填充其他必填字段（虽然 schema 允许空字符串，但为了稳健性还是填充）
-    await card.getByPlaceholder("色调 (Tailwind)").fill("bg-red-500");
-    await card.getByPlaceholder("Emoji").fill("🧪");
-
     // 保存页面
     // 监听保存请求
     const savePromise = page.waitForResponse(response => 
@@ -123,9 +119,9 @@ test.describe("产品数据同步功能", () => {
     // await expect(updatedNameInput).toBeVisible();
 
     // 更稳健的方式：检查最后一个产品卡片的名称输入框
-    const lastProductCard = page.locator(".grid > .relative").last();
-    const nameInputUpdated = lastProductCard.getByPlaceholder("名称");
-    await expect(nameInputUpdated).toHaveValue(newProductName);
+    const lastProductCard = page.getByTestId("product-card").last();
+    // ProductsArray 显示的是文本
+    await expect(lastProductCard.getByText(newProductName)).toBeVisible();
     
     // 或者更严谨一点，找到对应的 Select 选中的是该产品 ID (虽然 Select UI 显示的是 Name，Value 是 ID)
     // 简单起见，验证页面上存在这个新名称的输入框即可，因为这是我们在 Page Editor 中期望看到的

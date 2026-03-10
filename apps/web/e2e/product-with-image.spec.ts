@@ -59,8 +59,6 @@ test.describe("带图片的产品管理流程", () => {
       mimeType: "image/png",
       buffer: imageBuffer,
     });
-    // 确保 React 捕获到变化
-    await fileInput.dispatchEvent('change', { bubbles: true, composed: true });
     
     // 4. 提交表单
     await page.getByRole("button", { name: "创建" }).click();

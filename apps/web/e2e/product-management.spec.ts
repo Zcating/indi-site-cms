@@ -33,7 +33,7 @@ test.describe("产品管理流程", () => {
     await expect(page).toHaveURL(/\/admin\/products\/new$/);
     
     const newProduct = {
-      name: `测试产品-${testInfo.workerIndex}`,
+      name: `测试产品-${testInfo.workerIndex}-${Date.now()}`,
       description: "这是一个测试产品的描述",
     };
 
@@ -53,7 +53,7 @@ test.describe("产品管理流程", () => {
     await expect(page).toHaveURL(/\/admin\/products$/);
     await expect(page.getByText(newProduct.name)).toBeVisible();
     // 验证状态显示为草稿
-    await expect(page.getByText("草稿")).toBeVisible();
+    await expect(page.getByText("草稿").first()).toBeVisible();
 
     // 3. 更新产品
     // 找到对应产品的行，点击编辑按钮（第一个按钮）
