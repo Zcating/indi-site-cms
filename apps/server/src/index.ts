@@ -15,9 +15,10 @@ import { customerRoutes } from './routes/customers.js';
 import { imageRoutes } from './routes/images.js';
 import { pageRoutes } from './routes/pages.js';
 import { productRoutes } from './routes/products.js';
+import { uploadRoutes } from './routes/upload.js';
 
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/indi_site_cms?schema=public'
+  connectionString: process.env.DATABASE_URL
 });
 
 export const prisma = new PrismaClient({ adapter });
@@ -72,6 +73,7 @@ await fastify.register(customerRoutes, { prefix: '/api/customers' });
 await fastify.register(imageRoutes, { prefix: '/api/images' });
 await fastify.register(pageRoutes, { prefix: '/api/pages' });
 await fastify.register(productRoutes, { prefix: '/api/products' });
+await fastify.register(uploadRoutes, { prefix: '/api/upload' });
 
 fastify.get('/api/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
