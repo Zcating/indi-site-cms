@@ -2,7 +2,7 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, X } from "lucide-react";
-import { type Product } from "@/lib/api";
+import { type Product } from "@/api";
 import { Selector } from "@/components/internal/selector";
 import { Image } from "@/components/internal/image";
 

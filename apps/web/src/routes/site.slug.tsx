@@ -1,5 +1,5 @@
 import { Link, useRouteError, isRouteErrorResponse } from "react-router";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import type { Route } from "./+types/site.slug";
 
 export async function loader({ params, request }: Route.LoaderArgs) {

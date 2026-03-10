@@ -1,4 +1,4 @@
-import { type Product } from "@/lib/api";
+import { type Product } from "@/api";
 import { defaultSiteJson } from "./constants";
 
 export function transformToForm(json: any, products: Product[] = []): any {

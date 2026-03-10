@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Image as ImageIcon, FileText, UserCog } from "lucide-react";
 import type { Route } from "./+types/admin-dashboard";

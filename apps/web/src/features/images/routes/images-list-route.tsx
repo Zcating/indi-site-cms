@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useFetcher } from "react-router";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
