@@ -24,7 +24,6 @@ const productCreateSchema = z.object({
   name: z.string().trim().min(1, "请输入产品名称"),
   description: z.string().trim(),
   status: z.enum(["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"]),
-  imageIds: z.array(z.string()).optional(),
   imageUrl: z.string().optional(),
 });
 
@@ -32,13 +31,13 @@ type ProductCreateValues = z.infer<typeof productCreateSchema>;
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const imageIds = formData.getAll("imageIds") as string[];
+  const imageUrl = formData.get("imageUrl") as string | null;
 
   const parsed = productCreateSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
     status: formData.get("status"),
-    imageIds: imageIds.length > 0 ? imageIds : undefined,
+    imageUrl: imageUrl || undefined,
   });
 
   if (!parsed.success) {
@@ -76,13 +75,15 @@ export default function NewProductPage({ actionData }: Route.ComponentProps) {
         const blob = await response.blob();
         const file = new File([blob], "image.png", { type: blob.type });
         const image = await api.images.upload(file, { title: values.name });
-        formData.append("imageIds", image.id);
+        formData.append("imageUrl", image.absoluteUrl || image.url);
         toast.success("图片上传成功");
       } catch (error) {
         toast.error("图片上传失败");
         console.error(error);
         return;
       }
+    } else if (imageUrl) {
+      formData.append("imageUrl", imageUrl);
     }
 
     submit(formData, { method: "post" });

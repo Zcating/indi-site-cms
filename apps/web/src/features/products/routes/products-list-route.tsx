@@ -41,7 +41,6 @@ const productEditSchema = z.object({
 const productUpdateActionSchema = productEditSchema.extend({
   intent: z.literal("update"),
   id: z.string().min(1),
-  imageIds: z.array(z.string()).optional(),
 });
 
 const productDeleteActionSchema = z.object({

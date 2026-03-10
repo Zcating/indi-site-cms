@@ -73,8 +73,8 @@ test.describe("带图片的产品管理流程", () => {
     const createdProduct = apiData.data.find((p: any) => p.name === newProduct.name);
     
     expect(createdProduct).toBeTruthy();
-    expect(createdProduct.images).toBeDefined();
-    expect(createdProduct.images.length).toBeGreaterThan(0);
+    expect(createdProduct.imageUrl).toBeDefined();
+    expect(createdProduct.imageUrl).toContain("/uploads/");
 
     // 尝试在 UI 中查找，如果存在则进行编辑测试
     const productLocator = page.getByText(newProduct.name);
