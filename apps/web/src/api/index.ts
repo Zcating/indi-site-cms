@@ -86,9 +86,9 @@ export interface Page {
   updatedAt: string;
 }
 
-export interface Pagination {
-  page: number;
-  limit: number;
+export interface Pagination<T = unknown> {
   total: number;
-  totalPages: number;
+  pageSize: number;
+  pageCount: number;
+  data: T[];
 }

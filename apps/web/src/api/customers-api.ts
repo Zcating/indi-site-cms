@@ -2,7 +2,7 @@ import { request } from './http';
 import type { Customer, Pagination } from './index';
 
 export interface CustomersApi {
-  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<{ data: Customer[]; pagination: Pagination }>;
+  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<Pagination<Customer>>;
   get: (id: string, serverRequest?: Request) => Promise<Customer>;
   create: (data: { name: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }, serverRequest?: Request) => Promise<Customer>;
   update: (id: string, data: { name?: string; email?: string; phone?: string; company?: string; address?: string; notes?: string; status?: string }, serverRequest?: Request) => Promise<Customer>;
@@ -17,7 +17,7 @@ export const customersApi: CustomersApi = {
     if (params?.status) searchParams.set('status', params.status);
     if (params?.search) searchParams.set('search', params.search);
     const query = searchParams.toString();
-    return request<{ data: Customer[]; pagination: Pagination }>(`/customers${query ? `?${query}` : ''}`, { serverRequest });
+    return request<Pagination<Customer>>(`/customers${query ? `?${query}` : ''}`, { serverRequest });
   },
   get: (id: string, serverRequest?: Request) => request<Customer>(`/customers/${id}`, { serverRequest }),
   create: (data, serverRequest?: Request) => request<Customer>('/customers', { method: 'POST', body: data, serverRequest }),

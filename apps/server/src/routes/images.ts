@@ -58,13 +58,10 @@ export async function imageRoutes(fastify: FastifyInstance) {
     ]);
 
     return {
-      data: images,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit))
-      }
+      total,
+      pageSize: parseInt(limit),
+      pageCount: Math.ceil(total / parseInt(limit)),
+      data: images
     };
   });
 

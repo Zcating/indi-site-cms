@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useFetcher } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useFetcher, useSearchParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,6 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Route } from "./+types/customers-list-route";
@@ -50,8 +59,11 @@ const customerDeleteActionSchema = z.object({
 type CustomerEditValues = z.infer<typeof customerEditSchema>;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const data = await api.customers.list({ page: 1, limit: 10 }, request);
-  return { customers: data.data, pagination: data.pagination };
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") || "1");
+  const limit = parseInt(url.searchParams.get("limit") || "10");
+  const data = await api.customers.list({ page, limit }, request);
+  return { customers: data.data, pagination: data };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -110,12 +122,27 @@ export async function action({ request }: Route.ActionArgs) {
 export default function CustomersPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { customers: initialCustomers } = loaderData;
-  const [customers] = useState(initialCustomers);
+  const { customers: initialCustomers, pagination } = loaderData;
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [currentPagination, setCurrentPagination] = useState(pagination);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = parseInt(searchParams.get("page") || "1");
 
   const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      if ("success" in fetcher.data && fetcher.data.success) {
+        api.customers.list({ page: currentPage, limit: 10 }).then((data) => {
+          setCustomers(data.data);
+          setCurrentPagination(data);
+        });
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
   const form = useForm<CustomerEditValues>({
     resolver: zodResolver(customerEditSchema),
     defaultValues: {
@@ -235,6 +262,55 @@ export default function CustomersPage({
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} data={customers} rowKey={(customer) => customer.id} />
+          {currentPagination.pageCount > 0 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) {
+                          setSearchParams({ page: String(currentPage - 1) });
+                        }
+                      }}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: currentPagination.pageCount }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSearchParams({ page: String(page) });
+                          }}
+                          isActive={page === currentPage}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }).slice(Math.max(0, currentPage - 3), Math.min(currentPagination.pageCount, currentPage + 2))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < currentPagination.pageCount) {
+                          setSearchParams({ page: String(currentPage + 1) });
+                        }
+                      }}
+                      className={currentPage >= currentPagination.pageCount ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

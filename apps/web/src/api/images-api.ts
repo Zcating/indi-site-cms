@@ -7,7 +7,7 @@ const API_BASE =
     : "/api";
 
 export interface ImagesApi {
-  list: (params?: { page?: number; limit?: number; category?: string; search?: string }, serverRequest?: Request) => Promise<{ data: Image[]; pagination: Pagination }>;
+  list: (params?: { page?: number; limit?: number; category?: string; search?: string }, serverRequest?: Request) => Promise<Pagination<Image>>;
   get: (id: string, serverRequest?: Request) => Promise<Image>;
   upload: (file: File, metadata: { title?: string; alt?: string; category?: string; tags?: string[] }, serverRequest?: Request) => Promise<Image>;
   delete: (id: string, serverRequest?: Request) => Promise<{ success: boolean }>;
@@ -21,7 +21,7 @@ export const imagesApi: ImagesApi = {
     if (params?.category) searchParams.set('category', params.category);
     if (params?.search) searchParams.set('search', params.search);
     const query = searchParams.toString();
-    return request<{ data: Image[]; pagination: Pagination }>(`/images${query ? `?${query}` : ''}`, { serverRequest });
+    return request<Pagination<Image>>(`/images${query ? `?${query}` : ''}`, { serverRequest });
   },
   get: (id: string, serverRequest?: Request) => request<Image>(`/images/${id}`, { serverRequest }),
   upload: async (file: File, metadata: { title?: string; alt?: string; category?: string; tags?: string[] }, serverRequest?: Request) => {

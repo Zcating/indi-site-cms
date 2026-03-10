@@ -9,7 +9,7 @@ import type { Route } from "./+types/images-list-route";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const data = await api.images.list({ page: 1, limit: 20 }, request);
-  return { images: data.data, pagination: data.pagination };
+  return { images: data.data, pagination: data };
 }
 
 export async function action({ request }: Route.ActionArgs) {

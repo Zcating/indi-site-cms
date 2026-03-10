@@ -2,7 +2,7 @@ import { request } from './http';
 import type { Product, Pagination } from './index';
 
 export interface ProductsApi {
-  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<{ data: Product[]; pagination: Pagination }>;
+  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<Pagination<Product>>;
   get: (id: string, serverRequest?: Request) => Promise<Product>;
   create: (data: { name: string; slug?: string; description?: string; imageUrl?: string; status?: string }, serverRequest?: Request) => Promise<Product>;
   update: (id: string, data: { name?: string; slug?: string; description?: string; imageUrl?: string; status?: string }, serverRequest?: Request) => Promise<Product>;
@@ -17,7 +17,7 @@ export const productsApi: ProductsApi = {
     if (params?.status) searchParams.set('status', params.status);
     if (params?.search) searchParams.set('search', params.search);
     const query = searchParams.toString();
-    return request<{ data: Product[]; pagination: Pagination }>(`/products${query ? `?${query}` : ''}`, { serverRequest });
+    return request<Pagination<Product>>(`/products${query ? `?${query}` : ''}`, { serverRequest });
   },
   get: (id: string, serverRequest?: Request) => request<Product>(`/products/${id}`, { serverRequest }),
   create: (data, serverRequest?: Request) => request<Product>('/products', { method: 'POST', body: data, serverRequest }),

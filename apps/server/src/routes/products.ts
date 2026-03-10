@@ -84,13 +84,10 @@ export async function productRoutes(fastify: FastifyInstance) {
     ]);
 
     return {
-      data: products,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+      total,
+      pageSize: limit,
+      pageCount: Math.ceil(total / limit),
+      data: products
     };
   });
 

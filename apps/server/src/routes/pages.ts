@@ -97,13 +97,10 @@ export async function pageRoutes(fastify: FastifyInstance) {
     ]);
 
     return {
-      data: pages,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit))
-      }
+      total,
+      pageSize: parseInt(limit),
+      pageCount: Math.ceil(total / parseInt(limit)),
+      data: pages
     };
   });
 

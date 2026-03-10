@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useFetcher } from "react-router";
+import { Link, useFetcher, useSearchParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { ImageUploader } from "@/components/internal/image-uploader";
@@ -51,8 +59,11 @@ const productDeleteActionSchema = z.object({
 type ProductEditValues = z.infer<typeof productEditSchema>;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const data = await api.products.list({ page: 1, limit: 10 }, request);
-  return { products: data.data, pagination: data.pagination };
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") || "1");
+  const limit = parseInt(url.searchParams.get("limit") || "10");
+  const data = await api.products.list({ page, limit }, request);
+  return { products: data.data, pagination: data };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -101,9 +112,14 @@ export async function action({ request }: Route.ActionArgs) {
 export default function ProductsPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { products } = loaderData;
+  const { products: initialProducts, pagination } = loaderData;
+  const [products, setProducts] = useState(initialProducts);
+  const [currentPagination, setCurrentPagination] = useState(pagination);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = parseInt(searchParams.get("page") || "1");
 
   const fetcher = useFetcher();
   const lastIntentRef = useRef<string>("");
@@ -117,6 +133,10 @@ export default function ProductsPage({
         } else if (intent === "delete") {
           toast.success("产品删除成功");
         }
+        api.products.list({ page: currentPage, limit: 10 }).then((data) => {
+          setProducts(data.data);
+          setCurrentPagination(data);
+        });
       } else if ("error" in fetcher.data) {
         toast.error(fetcher.data.error);
       }
@@ -203,10 +223,12 @@ export default function ProductsPage({
     {
       label: "图片",
       render: (product) => (
-        <div className="flex -space-x-2 overflow-hidden">
+        <div className="w-[160px] h-[120px] flex -space-x-2 overflow-hidden">
           <Image
             src={product.imageUrl || product.images?.[0]?.url || ""}
             alt={product.name}
+            className="w-full h-full object-cover"
+            clickable
           />
         </div>
       ),
@@ -262,6 +284,55 @@ export default function ProductsPage({
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} data={products} rowKey={(product) => product.id} />
+          {currentPagination.pageCount > 0 && (
+            <div className="mt-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) {
+                          setSearchParams({ page: String(currentPage - 1) });
+                        }
+                      }}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: currentPagination.pageCount }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSearchParams({ page: String(page) });
+                          }}
+                          isActive={page === currentPage}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }).slice(Math.max(0, currentPage - 3), Math.min(currentPagination.pageCount, currentPage + 2))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < currentPagination.pageCount) {
+                          setSearchParams({ page: String(currentPage + 1) });
+                        }
+                      }}
+                      className={currentPage >= currentPagination.pageCount ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

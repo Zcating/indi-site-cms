@@ -2,7 +2,7 @@ import { request } from './http';
 import type { Page, Pagination } from './index';
 
 export interface PagesApi {
-  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<{ data: Page[]; pagination: Pagination }>;
+  list: (params?: { page?: number; limit?: number; status?: string; search?: string }, serverRequest?: Request) => Promise<Pagination<Page>>;
   get: (id: string, serverRequest?: Request) => Promise<Page>;
   getBySlug: (slug: string, serverRequest?: Request) => Promise<Page>;
   create: (data: { slug: string; title: string; content?: string; metaTitle?: string; metaDescription?: string; status?: string }, serverRequest?: Request) => Promise<Page>;
@@ -18,7 +18,7 @@ export const pagesApi: PagesApi = {
     if (params?.status) searchParams.set('status', params.status);
     if (params?.search) searchParams.set('search', params.search);
     const query = searchParams.toString();
-    return request<{ data: Page[]; pagination: Pagination }>(`/pages${query ? `?${query}` : ''}`, { serverRequest });
+    return request<Pagination<Page>>(`/pages${query ? `?${query}` : ''}`, { serverRequest });
   },
   get: (id: string, serverRequest?: Request) => request<Page>(`/pages/${id}`, { serverRequest }),
   getBySlug: (slug: string, serverRequest?: Request) => request<Page>(`/pages/slug/${slug}`, { serverRequest }),

@@ -43,7 +43,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   ]);
   return {
     pages: pagesData.data,
-    pagination: pagesData.pagination,
+    pagination: pagesData,
     products: productsData.data,
   };
 }

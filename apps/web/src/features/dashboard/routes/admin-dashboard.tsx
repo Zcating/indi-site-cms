@@ -15,9 +15,9 @@ export async function loader({ request }: Route.LoaderArgs) {
     return {
       stats: {
         users: users.length,
-        customers: customers.pagination.total,
-        images: images.pagination.total,
-        pages: pages.pagination.total,
+        customers: customers.total,
+        images: images.total,
+        pages: pages.total,
       },
     };
   } catch {
