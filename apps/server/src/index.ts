@@ -7,8 +7,7 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma.js';
 import { authRoutes } from './routes/auth.js';
 import { userRoutes } from './routes/users.js';
 import { customerRoutes } from './routes/customers.js';
@@ -16,12 +15,6 @@ import { imageRoutes } from './routes/images.js';
 import { pageRoutes } from './routes/pages.js';
 import { productRoutes } from './routes/products.js';
 import { uploadRoutes } from './routes/upload.js';
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL
-});
-
-export const prisma = new PrismaClient({ adapter });
 
 const fastify = Fastify({
   logger: true

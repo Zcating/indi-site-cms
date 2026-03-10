@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import bcrypt from 'bcrypt';
 
 interface LoginBody {

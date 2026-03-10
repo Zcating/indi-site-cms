@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';

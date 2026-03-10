@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 const productStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED']);
 
