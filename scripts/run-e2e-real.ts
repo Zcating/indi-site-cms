@@ -1,107 +1,14 @@
-import { spawn } from "node:child_process";
 import { randomInt } from "node:crypto";
-import net from "node:net";
 import { fileURLToPath } from "node:url";
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function parseDatabaseAddress(databaseUrl) {
-  try {
-    const url = new URL(databaseUrl);
-    return {
-      host: url.hostname || "localhost",
-      port: Number(url.port || 5432),
-    };
-  } catch {
-    return { host: "localhost", port: 5432 };
-  }
-}
-
-async function waitForTcp(host, port, timeoutMs = 60_000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const connected = await new Promise((resolve) => {
-      const socket = new net.Socket();
-      socket.setTimeout(2_000);
-      socket
-        .once("connect", () => {
-          socket.destroy();
-          resolve(true);
-        })
-        .once("timeout", () => {
-          socket.destroy();
-          resolve(false);
-        })
-        .once("error", () => resolve(false))
-        .connect(port, host);
-    });
-
-    if (connected) return;
-    await wait(500);
-  }
-
-  throw new Error(`Timed out waiting for TCP ${host}:${port}`);
-}
-
-async function waitForHttp(url, timeoutMs = 60_000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // ignore
-    }
-    await wait(500);
-  }
-  throw new Error(`Timed out waiting for ${url}`);
-}
-
-function start(command, args, options = {}) {
-  return spawn(command, args, {
-    stdio: "inherit",
-    shell: true,
-    ...options,
-  });
-}
-
-async function runStep(name, command, args, options = {}) {
-  const child = start(command, args, options);
-  const code = await new Promise((resolve) => {
-    child.on("close", (exitCode) => resolve(exitCode ?? 1));
-  });
-  if (code !== 0) {
-    throw new Error(`${name} failed with exit code ${code}`);
-  }
-}
-
-async function commandExitCode(command, args, options = {}) {
-  const child = start(command, args, {
-    stdio: "ignore",
-    ...options,
-  });
-  return new Promise((resolve) => {
-    child.on("close", (exitCode) => resolve(exitCode ?? 1));
-  });
-}
-
-async function waitForPostgresContainer(cwd, timeoutMs = 90_000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const code = await commandExitCode(
-      "docker",
-      ["compose", "exec", "-T", "postgres", "pg_isready", "-U", "postgres", "-d", "indi_site_cms"],
-      { cwd }
-    );
-
-    if (code === 0) return;
-    await wait(1000);
-  }
-
-  throw new Error("Timed out waiting for postgres container health");
-}
+import {
+  waitForTcp,
+  waitForHttp,
+  runStep,
+  parseDatabaseAddress,
+  waitForPostgresContainer,
+  createSharedEnv,
+  start,
+} from "./utils.js";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const pnpmBin = "pnpm";
@@ -116,19 +23,16 @@ const apiBase = `http://localhost:${apiPort}/api`;
 const webBase = `http://localhost:${webPort}`;
 
 const sharedEnv = {
-  ...process.env,
-  E2E_API_PORT: String(apiPort),
-  E2E_WEB_PORT: String(webPort),
-  INTERNAL_API_BASE: apiBase,
+  ...createSharedEnv(apiPort, webPort, apiBase),
   DATABASE_URL: databaseUrl,
   PORT: String(apiPort),
 };
 
 const { host: dbHost, port: dbPort } = parseDatabaseAddress(databaseUrl);
-const startedChildren = [];
+const startedChildren: Array<{ kill: () => void; killed?: boolean }> = [];
 let cleaningUp = false;
 
-async function cleanupDatabase() {
+async function cleanupDatabase(): Promise<void> {
   await runStep(
     "Cleanup DB reset",
     pnpmBin,
@@ -137,7 +41,7 @@ async function cleanupDatabase() {
   );
 }
 
-async function cleanup() {
+async function cleanup(): Promise<void> {
   if (cleaningUp) return;
   cleaningUp = true;
 

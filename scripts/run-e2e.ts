@@ -1,32 +1,13 @@
-import { spawn } from "node:child_process";
 import { randomInt } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import type { ChildProcess } from "node:child_process";
+import {
+  waitForHttp,
+  start,
+  createSharedEnv,
+  type SpawnOptions,
+} from "./utils.js";
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForHttp(url, timeoutMs = 60_000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // ignore
-    }
-    await wait(500);
-  }
-  throw new Error(`Timed out waiting for ${url}`);
-}
-
-function start(command, args, options = {}) {
-  const child = spawn(command, args, {
-    stdio: "inherit",
-    shell: true,
-    ...options,
-  });
-  return child;
-}
 const pnpmBin = "pnpm";
 
 const apiPort = Number(process.env.E2E_API_PORT || randomInt(3100, 3999));
@@ -34,12 +15,7 @@ const webPort = Number(process.env.E2E_WEB_PORT || randomInt(4100, 4999));
 const apiBase = `http://localhost:${apiPort}/api`;
 const webBase = `http://localhost:${webPort}`;
 
-const sharedEnv = {
-  ...process.env,
-  E2E_API_PORT: String(apiPort),
-  E2E_WEB_PORT: String(webPort),
-  INTERNAL_API_BASE: apiBase,
-};
+const sharedEnv = createSharedEnv(apiPort, webPort, apiBase);
 
 const mockApi = start("node", ["apps/web/e2e/mock-api-server.mjs"], {
   env: {
@@ -48,6 +24,7 @@ const mockApi = start("node", ["apps/web/e2e/mock-api-server.mjs"], {
     MOCK_WEB_ORIGIN: webBase,
   },
 });
+
 const web = start(pnpmBin, ["--filter", "web", "exec", "vite", "--port", String(webPort), "--strictPort"], {
   env: sharedEnv,
 });
@@ -69,7 +46,7 @@ try {
     }
   );
 
-  exitCode = await new Promise((resolve) => {
+  exitCode = await new Promise<number>((resolve) => {
     testRunner.on("close", (code) => resolve(code ?? 1));
   });
 } catch (error) {
