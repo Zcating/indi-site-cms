@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useFetcher } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,6 +106,24 @@ export default function ProductsPage({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const fetcher = useFetcher();
+  const lastIntentRef = useRef<string>("");
+  
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      const intent = lastIntentRef.current;
+      if ("success" in fetcher.data && fetcher.data.success) {
+        if (intent === "update") {
+          toast.success("产品更新成功");
+        } else if (intent === "delete") {
+          toast.success("产品删除成功");
+        }
+      } else if ("error" in fetcher.data) {
+        toast.error(fetcher.data.error);
+      }
+      lastIntentRef.current = "";
+    }
+  }, [fetcher.state, fetcher.data]);
+
   const form = useForm<ProductEditValues>({
     resolver: zodResolver(productEditSchema),
     defaultValues: {
@@ -148,6 +166,7 @@ export default function ProductsPage({
       }
     }
 
+    lastIntentRef.current = "update";
     fetcher.submit(
       {
         intent: "update",
@@ -161,6 +180,7 @@ export default function ProductsPage({
 
   function handleDelete(id: string) {
     if (!confirm("确定要删除这个产品吗？")) return;
+    lastIntentRef.current = "delete";
     fetcher.submit(
       { intent: "delete", id },
       { method: "post", encType: "application/json" }

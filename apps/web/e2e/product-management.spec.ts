@@ -70,6 +70,9 @@ test.describe("产品管理流程", () => {
     await page.getByLabel("名称").fill(updatedName);
     await page.getByRole("button", { name: "更新" }).click();
     
+    // 等待网络请求完成
+    await page.waitForLoadState('networkidle');
+    
     // 验证弹窗关闭和提示
     await expect(page.getByRole("dialog")).toBeHidden();
     await expect(page.getByText("产品更新成功")).toBeVisible();
@@ -84,6 +87,9 @@ test.describe("产品管理流程", () => {
     
     // 点击删除按钮（第二个按钮）
     await page.getByRole("row").filter({ hasText: updatedName }).getByRole("button").nth(1).click();
+    
+    // 等待网络请求完成
+    await page.waitForLoadState('networkidle');
     
     await expect(page.getByText("产品删除成功")).toBeVisible();
     await expect(page.getByText(updatedName)).toBeHidden();

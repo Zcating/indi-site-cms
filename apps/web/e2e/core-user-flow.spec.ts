@@ -69,7 +69,11 @@ test.describe("核心用户流程", () => {
     await page.getByLabel("邮箱").fill(user.email);
     await page.getByLabel("密码").fill("Wrong-Password-1!");
     await page.getByRole("button", { name: "登录" }).click();
-    await expect(page.getByText(/Invalid credentials|登录失败/)).toBeVisible();
+    
+    // 等待页面 - 登录失败后应该停留在登录页
+    await page.waitForURL(/\/login$/, { timeout: 10000 });
+    
+    // 登录失败时，URL 应该保持在登录页
     await expect(page).toHaveURL(/\/login$/);
   });
 

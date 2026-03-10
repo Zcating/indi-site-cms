@@ -94,6 +94,9 @@ test.describe("带图片的产品管理流程", () => {
         // 提交更新
         await page.getByRole("button", { name: "更新" }).click();
 
+        // 等待网络请求完成
+        await page.waitForLoadState('networkidle');
+        
         // 验证成功提示
         await expect(page.getByText("产品更新成功")).toBeVisible();
         await expect(page.getByRole("dialog")).toBeHidden();
