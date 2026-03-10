@@ -19,8 +19,8 @@ const productParamsSchema = z.object({
 const createProductBodySchema = z.object({
   name: z.string().trim().min(1),
   slug: z.string().trim().min(1).optional(),
-  description: z.string().trim().optional(),
-  imageIds: z.array(z.string().cuid()).optional(),
+  description: z.string().trim().nullable().optional(),
+  imageUrl: z.string().trim().nullable().optional(),
   status: productStatusSchema.optional()
 });
 
@@ -78,8 +78,7 @@ export async function productRoutes(fastify: FastifyInstance) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: { images: true }
+        orderBy: { createdAt: 'desc' }
       }),
       prisma.product.count({ where })
     ]);
@@ -103,8 +102,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
     const { id } = parsedParams.data;
     const product = await prisma.product.findUnique({
-      where: { id },
-      include: { images: true }
+      where: { id }
     });
     if (!product) {
       return reply.status(404).send({ error: 'Product not found' });
@@ -128,7 +126,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       return sendZodError(reply, parsedBody.error);
     }
 
-    const { name, slug: providedSlug, description, status, imageIds } = parsedBody.data;
+    const { name, slug: providedSlug, description, status, imageUrl } = parsedBody.data;
 
     let slug = providedSlug;
     if (!slug) {
@@ -154,11 +152,8 @@ export async function productRoutes(fastify: FastifyInstance) {
         slug,
         description,
         status: status ?? 'DRAFT',
-        images: imageIds ? {
-          connect: imageIds.map((id) => ({ id }))
-        } : undefined
-      },
-      include: { images: true }
+        imageUrl
+      }
     });
 
     return product;
@@ -176,7 +171,7 @@ export async function productRoutes(fastify: FastifyInstance) {
     }
 
     const { id } = parsedParams.data;
-    const { slug, imageIds } = parsedBody.data;
+    const { slug, imageUrl } = parsedBody.data;
 
     if (slug) {
       const existingProduct = await prisma.product.findFirst({
@@ -192,19 +187,12 @@ export async function productRoutes(fastify: FastifyInstance) {
     if (parsedBody.data.slug !== undefined) data.slug = parsedBody.data.slug;
     if (parsedBody.data.description !== undefined) data.description = parsedBody.data.description;
     if (parsedBody.data.status !== undefined) data.status = parsedBody.data.status;
-    
-    if (imageIds) {
-      data.images = {
-        set: [], // Clear existing relations
-        connect: imageIds.map((id) => ({ id })) // Connect new ones
-      };
-    }
+    if (parsedBody.data.imageUrl !== undefined) data.imageUrl = parsedBody.data.imageUrl;
 
     try {
       const product = await prisma.product.update({
         where: { id },
-        data,
-        include: { images: true }
+        data
       });
       return product;
     } catch (error: unknown) {
