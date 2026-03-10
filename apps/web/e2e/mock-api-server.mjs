@@ -204,20 +204,17 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === "/api/customers" && req.method === "GET") {
-    return json(res, 200, { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    return json(res, 200, { total: 0, pageSize: 10, pageCount: 0, data: [] });
   }
 
   // Products API
   if (path === "/api/products" && req.method === "GET") {
     const allProducts = Array.from(products.values());
     return json(res, 200, {
+      total: allProducts.length,
+      pageSize: 10,
+      pageCount: Math.ceil(allProducts.length / 10),
       data: allProducts,
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: allProducts.length,
-        totalPages: Math.ceil(allProducts.length / 10),
-      },
     });
   }
 
@@ -268,8 +265,10 @@ const server = createServer(async (req, res) => {
       filtered = allImages.filter((img) => img.title.toLowerCase().includes(search.toLowerCase()));
     }
     return json(res, 200, {
+      total: filtered.length,
+      pageSize: 10,
+      pageCount: Math.ceil(filtered.length / 10),
       data: filtered,
-      pagination: { page: 1, limit: 10, total: filtered.length, totalPages: Math.ceil(filtered.length / 10) },
     });
   }
 
@@ -315,7 +314,7 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === "/api/pages" && req.method === "GET") {
-    return json(res, 200, { data: [], pagination: { page: 1, limit: 1, total: 0, totalPages: 0 } });
+    return json(res, 200, { total: 0, pageSize: 1, pageCount: 0, data: [] });
   }
 
   return json(res, 404, { error: `Not found: ${req.method} ${path}` });

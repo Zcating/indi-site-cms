@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useFetcher, useSearchParams } from "react-router";
+import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -110,16 +110,23 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ProductsPage({
-  loaderData,
+  loaderData: initialLoaderData,
 }: Route.ComponentProps) {
-  const { products: initialProducts, pagination } = loaderData;
-  const [products, setProducts] = useState(initialProducts);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1");
+
+  const data = useLoaderData() as typeof initialLoaderData;
+  const { products, pagination } = data || initialLoaderData;
+
+  const [productsData, setProductsData] = useState(products);
   const [currentPagination, setCurrentPagination] = useState(pagination);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const currentPage = parseInt(searchParams.get("page") || "1");
+  useEffect(() => {
+    setProductsData(products);
+    setCurrentPagination(pagination);
+  }, [products, pagination]);
 
   const fetcher = useFetcher();
   const lastIntentRef = useRef<string>("");
@@ -134,7 +141,7 @@ export default function ProductsPage({
           toast.success("产品删除成功");
         }
         api.products.list({ page: currentPage, limit: 10 }).then((data) => {
-          setProducts(data.data);
+          setProductsData(data.data);
           setCurrentPagination(data);
         });
       } else if ("error" in fetcher.data) {
@@ -283,7 +290,7 @@ export default function ProductsPage({
           <CardTitle>产品列表</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={products} rowKey={(product) => product.id} />
+          <DataTable columns={columns} data={productsData} rowKey={(product) => product.id} />
           {currentPagination.pageCount > 0 && (
             <div className="mt-4">
               <Pagination>

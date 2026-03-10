@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useFetcher, useSearchParams } from "react-router";
+import { useState, useEffect, useSyncExternalStore } from "react";
+import { Link, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -120,16 +120,23 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function CustomersPage({
-  loaderData,
+  loaderData: initialLoaderData,
 }: Route.ComponentProps) {
-  const { customers: initialCustomers, pagination } = loaderData;
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  
+  const data = useLoaderData() as typeof initialLoaderData;
+  const { customers, pagination } = data || initialLoaderData;
+  
+  const [customersData, setCustomersData] = useState(customers);
   const [currentPagination, setCurrentPagination] = useState(pagination);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const currentPage = parseInt(searchParams.get("page") || "1");
+ 
+  useEffect(() => {
+    setCustomersData(customers);
+    setCurrentPagination(pagination);
+  }, [customers, pagination]);
 
   const fetcher = useFetcher();
 
@@ -137,7 +144,7 @@ export default function CustomersPage({
     if (fetcher.state === "idle" && fetcher.data) {
       if ("success" in fetcher.data && fetcher.data.success) {
         api.customers.list({ page: currentPage, limit: 10 }).then((data) => {
-          setCustomers(data.data);
+          setCustomersData(data.data);
           setCurrentPagination(data);
         });
       }
@@ -261,7 +268,7 @@ export default function CustomersPage({
           <CardTitle>客户列表</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={customers} rowKey={(customer) => customer.id} />
+          <DataTable columns={columns} data={customersData} rowKey={(customer) => customer.id} />
           {currentPagination.pageCount > 0 && (
             <div className="mt-4">
               <Pagination>
